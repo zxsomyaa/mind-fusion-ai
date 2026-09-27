@@ -1,19 +1,70 @@
 import { useState, useRef, useEffect } from 'react';
 import { C, FONT } from '../data';
 import { visionAI, checkConnection, pullModel } from '../ai';
+import { parseAnalysis, balanceTone, balanceLabel, mealsOn, summariseMeals } from '../nutritionLogic';
+import { RingGauge, DonutChart } from './charts';
 
 const NUTRITION_PROMPT = `Look at this meal photo and respond with ONLY a raw JSON object — no markdown, no code fences, no explanation. Use exactly this structure:
 {"foods":["item1"],"calories_estimate":450,"nutrients":{"protein":22,"carbs":55,"fat":14,"fibre":6},"mood_impact":"one sentence about energy/mood","recommendation":"one practical suggestion","balance_score":7}
 Estimate realistically. balance_score is 1-10.`;
+
+const MAX_DIMENSION = 768;
+const DAY_CALORIES = 2000;
+const TONE_COLOURS = { high: C.sage, mid: '#D4A017', low: '#E07A5F' };
+const MACRO_COLOURS = { protein: '#E07A5F', carbs: '#D4A017', fat: '#748CAB', fibre: '#52B788' };
+const MACRO_NAMES = { protein: 'Protein', carbs: 'Carbs', fat: 'Fat', fibre: 'Fibre' };
+
+function load(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }
+function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+
+function Card({ children, style, center }) {
+  return (
+    <div style={{
+      background: C.surface, borderRadius: 16, border: `1px solid ${C.border}`,
+      padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10,
+      ...(center ? { alignItems: 'center', textAlign: 'center' } : {}), ...style,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function Heading({ children }) { return <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{children}</div>; }
+function Muted({ children, size = 12 }) { return <p style={{ color: C.textMuted, fontSize: size, lineHeight: 1.5 }}>{children}</p>; }
+
+function StatCard({ label, value }) {
+  return (
+    <Card style={{ flex: 1, padding: '14px 18px', gap: 2 }}>
+      <span style={{ color: C.textMuted, fontSize: 12, fontWeight: 600 }}>{label}</span>
+      <span style={{ color: C.text, fontSize: 26, fontWeight: 800 }}>{value}</span>
+    </Card>
+  );
+}
+
+function ScoreBadge({ score }) {
+  const tone = balanceTone(score);
+  const colour = TONE_COLOURS[tone];
+  return (
+    <div style={{
+      width: 44, height: 44, borderRadius: 22, flexShrink: 0,
+      background: `${colour}2E`, color: colour, border: `2px solid ${colour}`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontWeight: 800, fontSize: 15,
+    }}>
+      {score != null ? score : '?'}
+    </div>
+  );
+}
 
 export default function NutritionTab({ aiConfig, connected, onOpenSettings }) {
   const [image,     setImage]     = useState(null); // { url, base64, mimeType }
   const [analysing, setAnalysing] = useState(false);
   const [result,    setResult]    = useState(null);
   const [error,     setError]     = useState('');
-  const [modelReady, setModelReady] = useState(null); // null unknown, true available, false missing
+  const [modelReady, setModelReady] = useState(null);
   const [pulling,    setPulling]    = useState(false);
   const [pullPct,    setPullPct]    = useState(null);
+  const [meals,      setMeals]      = useState(() => load('mf_nutrition_history', []));
   const fileRef = useRef(null);
 
   useEffect(() => {
@@ -29,7 +80,6 @@ export default function NutritionTab({ aiConfig, connected, onOpenSettings }) {
     return () => { cancelled = true; };
   }, [aiConfig, connected]);
 
-  // Auto-pull the vision model in the background as soon as we know it's missing.
   useEffect(() => {
     if (modelReady !== false || pulling) return;
     let cancelled = false;
@@ -49,9 +99,7 @@ export default function NutritionTab({ aiConfig, connected, onOpenSettings }) {
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        // Resize to max 768px — keeps base64 small enough for local models
-        const MAX = 768;
-        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const scale = Math.min(1, MAX_DIMENSION / Math.max(img.width, img.height));
         const w = Math.round(img.width * scale);
         const h = Math.round(img.height * scale);
         const canvas = document.createElement('canvas');
@@ -75,23 +123,30 @@ export default function NutritionTab({ aiConfig, connected, onOpenSettings }) {
 
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 180000); // 3 min timeout
+      const timeout = setTimeout(() => controller.abort(), 180000);
       let raw;
       try {
         raw = await visionAI(aiConfig, image.base64, image.mimeType, NUTRITION_PROMPT, controller.signal);
       } finally {
         clearTimeout(timeout);
       }
-
-      // Strip markdown code fences if present, then extract JSON object
-      const cleaned = raw.replace(/```(?:json)?/gi, '').trim();
-      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error(`Model returned non-JSON: ${raw.slice(0, 120)}`);
-      setResult(JSON.parse(jsonMatch[0]));
+      const analysis = parseAnalysis(raw);
+      setResult(analysis);
+      const entry = {
+        id: Date.now(),
+        foods: analysis.foods.join(', '),
+        caloriesEstimate: analysis.caloriesEstimate,
+        balanceScore: analysis.balanceScore,
+        moodImpact: analysis.moodImpact,
+        recommendation: analysis.recommendation,
+        ...analysis.nutrients,
+        timestamp: Date.now(),
+      };
+      setMeals(prev => { const updated = [entry, ...prev]; save('mf_nutrition_history', updated); return updated; });
     } catch (e) {
       if (e.name === 'AbortError') {
         setError('Analysis timed out (3 min). Try a smaller or clearer photo.');
-      } else if (e.message?.includes('fetch') || e.message?.includes('Failed') || e.message?.includes('NetworkError')) {
+      } else if (e.message?.includes('fetch') || e.message?.includes('Failed') || e.message?.includes('NetworkError') || e.message?.includes('Connection')) {
         setError("Couldn't reach the vision model — is Ollama running? Check settings.");
       } else {
         setError(`Analysis failed: ${e.message}`);
@@ -101,18 +156,21 @@ export default function NutritionTab({ aiConfig, connected, onOpenSettings }) {
     }
   };
 
-  const reset = () => { setImage(null); setResult(null); setError(''); };
+  const deleteMeal = (id) => {
+    setMeals(prev => { const updated = prev.filter(m => m.id !== id); save('mf_nutrition_history', updated); return updated; });
+  };
+
+  const today = summariseMeals(mealsOn(meals, new Date()));
+  const ghostBtn = { padding: '11px 20px', borderRadius: 12, border: `2px solid ${C.border}`, background: 'none', color: C.textMuted, cursor: 'pointer', fontFamily: FONT.sans, fontSize: 14 };
+  const primaryBtn = { padding: '11px 20px', borderRadius: 12, border: 'none', background: C.primary, color: '#FFF', cursor: 'pointer', fontFamily: FONT.sans, fontSize: 14, fontWeight: 600 };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div>
-        <h2 style={{ fontFamily: FONT.serif, color: C.primary, fontSize: 24, marginBottom: 6 }}>Meal analysis</h2>
-        <p style={{ color: C.textMuted, fontSize: 14 }}>
-          Upload a photo of your meal to get a nutrition breakdown and wellbeing insights.
-        </p>
+        <h1 style={{ fontFamily: FONT.serif, color: C.primary, fontSize: 24, fontWeight: 800, marginBottom: 6 }}>Meal analysis</h1>
+        <Muted size={13}>Snap or drop a photo of your meal for an instant nutrition estimate and a note on how it might affect your energy. Analysed on your computer.</Muted>
       </div>
 
-      {/* Vision model status — only shown while preparing, or if disconnected */}
       {(pulling || connected === false) && (
         <div style={{
           background: pulling ? '#FDF6E3' : C.sagePale, borderRadius: 12, padding: '10px 16px',
@@ -130,125 +188,155 @@ export default function NutritionTab({ aiConfig, connected, onOpenSettings }) {
         </div>
       )}
 
-      {!result ? (
-        <div style={{ background: C.surface, borderRadius: 20, boxShadow: C.shadow, border: `1px solid ${C.border}`, padding: 28 }}>
-          {!image ? (
-            <div
-              onDrop={handleDrop}
-              onDragOver={e => e.preventDefault()}
-              onClick={() => fileRef.current?.click()}
-              style={{
-                border: `2px dashed ${C.border}`, borderRadius: 16,
-                padding: '48px 24px', textAlign: 'center', cursor: 'pointer',
-                transition: 'border-color 0.2s, background 0.2s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = C.primary; e.currentTarget.style.background = C.primaryPale; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = C.border;  e.currentTarget.style.background = 'transparent'; }}
-            >
-              <div style={{ fontSize: 44, marginBottom: 14 }}>📸</div>
-              <p style={{ color: C.primary, fontWeight: 600, fontSize: 16, marginBottom: 6 }}>Upload a meal photo</p>
-              <p style={{ color: C.textMuted, fontSize: 13 }}>Click to browse or drag & drop · JPG, PNG, WebP</p>
-              <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleFile(e.target.files[0])} />
-            </div>
+      {/* Today */}
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+        <StatCard label="Calories today" value={today.calories != null ? today.calories.toLocaleString() : '—'} />
+        <StatCard label="Meals logged today" value={today.count} />
+        <StatCard label="Avg balance today" value={today.avgBalance != null ? `${today.avgBalance}/10` : '—'} />
+      </div>
+
+      {/* Upload + results */}
+      <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+        <Card style={{ flex: '1 1 280px', minWidth: 260 }}>
+          <Heading>Your meal</Heading>
+          <div
+            onDrop={handleDrop}
+            onDragOver={e => e.preventDefault()}
+            onClick={() => fileRef.current?.click()}
+            style={{
+              border: `2px dashed ${C.border}`, borderRadius: 16, minHeight: 220,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              textAlign: 'center', cursor: 'pointer', overflow: 'hidden', padding: image ? 0 : 24,
+            }}
+          >
+            {image ? (
+              <img src={image.url} alt="Meal" style={{ width: '100%', height: '100%', maxHeight: 260, objectFit: 'cover' }} />
+            ) : (
+              <div>
+                <div style={{ fontSize: 38, marginBottom: 8 }}>🍽️</div>
+                <p style={{ fontSize: 15, fontWeight: 700, color: C.text }}>Drop a meal photo here</p>
+                <p style={{ color: C.textMuted, fontSize: 13 }}>or click to choose one</p>
+              </div>
+            )}
+            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleFile(e.target.files[0])} />
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => fileRef.current?.click()} style={ghostBtn}>Choose photo…</button>
+            <button onClick={analyse} disabled={!image || analysing} style={{ ...primaryBtn, flex: 1, opacity: !image || analysing ? 0.5 : 1 }}>
+              {analysing ? 'Analysing…' : 'Analyse meal  →'}
+            </button>
+          </div>
+          {error && <p style={{ color: '#E07A5F', fontSize: 12 }}>{error}</p>}
+          <Muted size={11}>PNG, JPEG, HEIC, WebP and more. The photo is resized on your computer and never leaves it.</Muted>
+        </Card>
+
+        <div style={{ flex: '1 1 420px', minWidth: 300, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {analysing ? (
+            <Card center style={{ minHeight: 220, justifyContent: 'center' }}>
+              <div style={{ fontSize: 40 }}>🔍</div>
+              <p style={{ fontSize: 16, fontWeight: 700 }}>Analysing your meal…</p>
+              <div style={{ width: '80%', height: 8, borderRadius: 4, background: C.border, overflow: 'hidden' }}>
+                <div style={{ width: '40%', height: '100%', background: C.primary, animation: 'mf-indeterminate 1.2s ease-in-out infinite' }} />
+              </div>
+              <Muted>A local model does this on your own computer, so it can take up to a minute.</Muted>
+            </Card>
+          ) : !result ? (
+            <Card center style={{ minHeight: 220, justifyContent: 'center' }}>
+              <div style={{ fontSize: 44 }}>🥗</div>
+              <p style={{ fontSize: 16, fontWeight: 700 }}>Your analysis will appear here</p>
+              <Muted>You'll see estimated calories, how balanced the meal is, its macros, and a suggestion — and it's saved to your meal log.</Muted>
+            </Card>
           ) : (
-            <div>
-              <img src={image.url} alt="Meal" style={{ width: '100%', maxHeight: 320, objectFit: 'cover', borderRadius: 14, marginBottom: 20 }} />
-              {error && (
-                <div style={{ padding: '10px 14px', background: '#FCEEE9', borderRadius: 10, marginBottom: 16, color: '#C0392B', fontSize: 13 }}>
-                  {error}
+            <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                <Card style={{ flex: 1, minWidth: 160 }}>
+                  <Heading>Estimated calories</Heading>
+                  {result.caloriesEstimate == null ? (
+                    <Muted>The model didn't give a calorie estimate for this photo.</Muted>
+                  ) : (
+                    <>
+                      <div><span style={{ fontSize: 34, fontWeight: 800, color: C.text }}>{result.caloriesEstimate}</span> <span style={{ fontSize: 14, fontWeight: 600, color: C.textMuted }}>kcal</span></div>
+                      <div style={{ height: 8, borderRadius: 4, background: C.border, overflow: 'hidden' }}>
+                        <div style={{ width: `${Math.min(100, Math.round(result.caloriesEstimate / DAY_CALORIES * 100))}%`, height: '100%', background: C.primary }} />
+                      </div>
+                      <Muted>about {Math.round(result.caloriesEstimate / DAY_CALORIES * 100)}% of a {DAY_CALORIES.toLocaleString()} kcal day</Muted>
+                    </>
+                  )}
+                </Card>
+                <Card center style={{ flex: 1, minWidth: 160, justifyContent: 'center' }}>
+                  <Heading>Meal balance</Heading>
+                  <RingGauge fraction={(result.balanceScore || 0) / 10} text={result.balanceScore != null ? `${result.balanceScore}/10` : '—'} sub={balanceLabel(result.balanceScore)} colour={TONE_COLOURS[balanceTone(result.balanceScore)]} />
+                </Card>
+              </div>
+
+              {Object.keys(result.nutrients).length > 0 && (
+                <Card>
+                  <Heading>Macros (by weight)</Heading>
+                  <DonutChart
+                    segments={Object.entries(result.nutrients).map(([k, v]) => ({ label: MACRO_NAMES[k], value: v, colour: MACRO_COLOURS[k] }))}
+                    centre={`${Object.values(result.nutrients).reduce((a, b) => a + b, 0)}g`} sub="total"
+                  />
+                </Card>
+              )}
+
+              {result.foods.length > 0 && (
+                <Card>
+                  <Heading>What I can see</Heading>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {result.foods.map((f, i) => (
+                      <span key={i} style={{ padding: '4px 12px', borderRadius: 12, background: C.primaryPale, color: C.primary, fontSize: 12, fontWeight: 600 }}>{f}</span>
+                    ))}
+                  </div>
+                </Card>
+              )}
+
+              {(result.moodImpact || result.recommendation) && (
+                <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                  {result.moodImpact && (
+                    <Card style={{ flex: 1, minWidth: 200 }}>
+                      <Heading>⚡ Energy &amp; mood</Heading>
+                      <p style={{ fontSize: 13, color: C.text }}>{result.moodImpact}</p>
+                    </Card>
+                  )}
+                  {result.recommendation && (
+                    <Card style={{ flex: 1, minWidth: 200 }}>
+                      <Heading>💡 Try this next</Heading>
+                      <p style={{ fontSize: 13, color: C.text }}>{result.recommendation}</p>
+                    </Card>
+                  )}
                 </div>
               )}
-              <div style={{ display: 'flex', gap: 12 }}>
-                <button onClick={reset} style={{
-                  flex: 1, padding: '12px', borderRadius: 12,
-                  border: `2px solid ${C.border}`, background: 'none',
-                  color: C.textMuted, cursor: 'pointer', fontFamily: FONT.sans, fontSize: 14,
-                }}>Upload different photo</button>
-                <button onClick={analyse} disabled={analysing} style={{
-                  flex: 2, padding: '12px', borderRadius: 12, border: 'none',
-                  background: analysing ? C.border : C.primary,
-                  color: '#FFF', cursor: analysing ? 'wait' : 'pointer',
-                  fontFamily: FONT.sans, fontSize: 14, fontWeight: 600,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                }}>
-                  {analysing
-                    ? <><span style={{ animation: 'spin 0.8s linear infinite', display: 'inline-block' }}>⏳</span> Analysing… (may take 1–2 min)</>
-                    : '🔍 Analyse meal'}
-                </button>
-              </div>
+              <p style={{ color: C.sage, fontSize: 12, fontWeight: 600 }}>✓ Saved to your meal log</p>
             </div>
           )}
         </div>
+      </div>
+
+      {/* Recent meals */}
+      <Heading>Recent meals</Heading>
+      {meals.length === 0 ? (
+        <Muted size={13}>No meals yet — analyse your first one above and it will show up here.</Muted>
       ) : (
-        <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <img src={image.url} alt="Meal" style={{ width: 180, height: 140, objectFit: 'cover', borderRadius: 16, flexShrink: 0 }} />
-            <div style={{ flex: 1, minWidth: 200, background: C.surface, borderRadius: 16, boxShadow: C.shadow, border: `1px solid ${C.border}`, padding: 20 }}>
-              <p style={{ fontSize: 12, color: C.textMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Foods detected</p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {(result.foods || []).map((f, i) => (
-                  <span key={i} style={{ padding: '4px 12px', borderRadius: 100, background: C.primaryPale, color: C.primary, fontSize: 13 }}>{f}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
-            {[
-              { label: 'Calories', value: result.calories_estimate, unit: 'kcal', color: C.primary },
-              { label: 'Protein',  value: result.nutrients?.protein, unit: 'g',  color: C.sage },
-              { label: 'Carbs',    value: result.nutrients?.carbs,   unit: 'g',  color: '#E97D3F' },
-              { label: 'Fat',      value: result.nutrients?.fat,     unit: 'g',  color: '#B5838D' },
-              { label: 'Fibre',    value: result.nutrients?.fibre,   unit: 'g',  color: '#74C69D' },
-            ].map(item => (
-              <div key={item.label} style={{
-                background: C.surface, borderRadius: 14, padding: '16px 14px',
-                boxShadow: C.shadow, border: `1px solid ${C.border}`, textAlign: 'center',
-              }}>
-                <p style={{ fontSize: 22, fontWeight: 700, color: item.color, fontFamily: FONT.serif }}>{item.value ?? '—'}</p>
-                <p style={{ fontSize: 11, color: C.textMuted }}>{item.unit}</p>
-                <p style={{ fontSize: 12, color: C.text, fontWeight: 500 }}>{item.label}</p>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ background: C.surface, borderRadius: 16, boxShadow: C.shadow, border: `1px solid ${C.border}`, padding: '18px 20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <p style={{ fontSize: 14, fontWeight: 600, color: C.text }}>Wellness score</p>
-              <p style={{ fontSize: 18, fontWeight: 700, color: C.primary, fontFamily: FONT.serif }}>{result.balance_score}/10</p>
-            </div>
-            <div style={{ height: 10, background: C.border, borderRadius: 10, overflow: 'hidden' }}>
-              <div style={{
-                height: '100%', borderRadius: 10,
-                width: `${(result.balance_score / 10) * 100}%`,
-                background: `linear-gradient(90deg, ${C.sage}, ${C.primary})`,
-                transition: 'width 0.8s ease',
-              }} />
-            </div>
-          </div>
-
-          {[
-            { label: 'Mood & energy impact', text: result.mood_impact,       emoji: '🧠' },
-            { label: 'A small suggestion',   text: result.recommendation,    emoji: '💡' },
-          ].map(({ label, text, emoji }) => (
-            <div key={label} style={{
-              background: C.surface, borderRadius: 16, boxShadow: C.shadow,
-              border: `1px solid ${C.border}`, padding: '16px 20px',
-              display: 'flex', gap: 14, alignItems: 'flex-start',
-            }}>
-              <span style={{ fontSize: 24, flexShrink: 0 }}>{emoji}</span>
-              <div>
-                <p style={{ fontSize: 12, color: C.textMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 5 }}>{label}</p>
-                <p style={{ fontSize: 14, color: C.text, lineHeight: 1.65 }}>{text}</p>
-              </div>
-            </div>
-          ))}
-
-          <button onClick={reset} style={{
-            alignSelf: 'flex-start', padding: '10px 22px', borderRadius: 12,
-            border: `2px solid ${C.border}`, background: 'none',
-            color: C.textMuted, cursor: 'pointer', fontFamily: FONT.sans, fontSize: 13,
-          }}>← Analyse another meal</button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {meals.slice(0, 8).map(meal => {
+            const when = new Date(meal.timestamp).toLocaleString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+            const macros = [['P', meal.protein], ['C', meal.carbs], ['F', meal.fat]].filter(([, v]) => v != null).map(([l, v]) => `${l} ${v}g`).join(' · ');
+            const bits = [when, meal.caloriesEstimate != null ? `${meal.caloriesEstimate} kcal` : null, macros || null].filter(Boolean).join(' · ');
+            return (
+              <Card key={meal.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: '14px 18px' }}>
+                <ScoreBadge score={meal.balanceScore} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{meal.foods || 'Meal'}</p>
+                  <p style={{ color: C.textMuted, fontSize: 12 }}>{bits}</p>
+                  {meal.moodImpact && <p style={{ color: C.textMuted, fontSize: 12, fontStyle: 'italic' }}>{meal.moodImpact}</p>}
+                </div>
+                <button onClick={() => deleteMeal(meal.id)} title="Remove this meal from your log" style={{
+                  width: 28, height: 28, borderRadius: 8, border: `1px solid ${C.border}`, background: 'none',
+                  color: C.textMuted, cursor: 'pointer', flexShrink: 0, alignSelf: 'flex-start',
+                }}>×</button>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

@@ -92,6 +92,29 @@ export const MOOD_FALLBACKS = {
   hopeful:  "There's something quietly brave about holding onto hope. That reaching-forward in you matters.",
 };
 
+// ─── Crisis detection ─────────────────────────────────────────
+// Deliberately simple and over-cautious: a false alarm just shows a support
+// banner, a miss could matter a lot more.
+export const CRISIS_PHRASES = [
+  'kill myself', 'suicide', 'suicidal', 'end my life', 'want to die', 'wanna die',
+  'self harm', 'self-harm', 'hurt myself', "don't want to live", 'dont want to live',
+  'no reason to live', 'better off dead', 'take my own life',
+  // Hindi / Hinglish
+  'marna chahta', 'marna chahti', 'mar jana chahta', 'mar jana chahti', 'jeene ka mann nahi',
+  'jeene ka man nahi', 'khudkushi', 'aatmahatya', 'atmahatya', 'khud ko khatam',
+  'आत्महत्या', 'मरना चाहता', 'मरना चाहती', 'जीने का मन नहीं', 'खुद को खत्म',
+];
+
+export function detectCrisis(text) {
+  const lower = text.toLowerCase();
+  return CRISIS_PHRASES.some(phrase => lower.includes(phrase));
+}
+
+export const CRISIS_FALLBACK =
+  "I'm really glad you told me. What you're feeling matters, and you don't have to hold it alone — " +
+  'please reach out to someone right now, like a crisis line or a person you trust. ' +
+  'If you might act on these thoughts, call your local emergency number.';
+
 // ─── Onboarding Data ─────────────────────────────────────────
 export const COUNTRIES = [
   { code: 'US', name: 'United States',   flag: '🇺🇸' },
@@ -130,6 +153,43 @@ export const LANGUAGES = [
   { code: 'sw', name: 'Kiswahili',   locale: 'sw-KE' },
   { code: 'ur', name: 'اردو',        locale: 'ur-PK' },
 ];
+
+// The language the companion can reply in, chosen from the Chat page — separate
+// from the language picked at sign-up. "auto" follows whatever language you
+// write in; "hinglish" is Hindi typed in English letters.
+const LANGUAGE_ENGLISH_NAMES = {
+  en: 'English', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian',
+  pt: 'Portuguese', hi: 'Hindi', ja: 'Japanese', ar: 'Arabic', zh: 'Chinese',
+};
+export const CHAT_LANGUAGES = [
+  { code: 'auto', name: 'Match what I write' },
+  { code: 'en', name: 'English' },
+  { code: 'hi', name: 'हिंदी (Hindi)' },
+  { code: 'hinglish', name: 'Hinglish (Hindi in English letters)' },
+  ...LANGUAGES.filter(l => l.code !== 'en' && l.code !== 'hi').map(l => ({ code: l.code, name: l.name })),
+];
+
+/** What replies use until the user picks something on the Chat page. */
+export function defaultChatLanguage(profileLanguage) {
+  return profileLanguage in LANGUAGE_ENGLISH_NAMES && profileLanguage !== 'en' ? profileLanguage : 'auto';
+}
+
+/** The line added to the model's instructions for a reply language ('' if unknown). */
+export function languageInstruction(code) {
+  if (code === 'auto') {
+    return 'Reply in the same language the person writes in. They may mix languages or write Hindi in ' +
+           'English letters — if so, reply the same way.';
+  }
+  if (code === 'hinglish') {
+    return 'IMPORTANT: Reply in Hinglish — Hindi written in English (Roman) letters, the way people text, ' +
+           'e.g. "Mujhe samajh aa raha hai ki tum kaisa feel kar rahe ho." Never use Devanagari script.';
+  }
+  if (code === 'en') return 'IMPORTANT: Reply in English, even if the person writes in another language.';
+  if (code in LANGUAGE_ENGLISH_NAMES) {
+    return `IMPORTANT: Respond entirely in ${LANGUAGE_ENGLISH_NAMES[code]}, even if the person writes in another language.`;
+  }
+  return '';
+}
 
 export const AGE_GROUPS = [
   { id: '18-24', label: '18 – 24' },

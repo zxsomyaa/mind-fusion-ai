@@ -65,11 +65,15 @@ export default function HomeTab({ userName, userProfile, moodHistory, addMoodEnt
 
   const now = new Date();
   const journal = load('mf_journal', []);
+  const meals = load('mf_nutrition_history', []);
+  const exerciseSessions = load('mf_exercise_sessions', []);
   const today = isoDay();
 
   const activityDays = new Set([
     ...moodHistory.map(m => isoDay(new Date(m.timestamp))),
     ...journal.map(j => isoDay(new Date(j.timestamp))),
+    ...meals.map(m => isoDay(new Date(m.timestamp))),
+    ...exerciseSessions.map(s => isoDay(new Date(s.timestamp))),
     ...Object.keys(habitLog),
     ...Object.keys(sleepLog),
   ]);
@@ -124,6 +128,8 @@ export default function HomeTab({ userName, userProfile, moodHistory, addMoodEnt
         <StatCard value={`🔥 ${streak} day${streak !== 1 ? 's' : ''}`} caption="check-in streak" />
         <StatCard value={moodHistory.length} caption="mood check-ins" />
         <StatCard value={journal.length} caption="journal entries" />
+        <StatCard value={meals.length} caption="meals analysed" />
+        <StatCard value={exerciseSessions.length} caption="exercises done" />
       </div>
 
       <Card>

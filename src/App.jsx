@@ -187,11 +187,11 @@ export default function App() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
       <main style={{ flex: 1, maxWidth: 920, margin: '0 auto', width: '100%', padding: '24px 20px 32px' }}>
         {activeTab === 'today'     && <HomeTab      userName={user.name} userProfile={userProfile} moodHistory={moodHistory} addMoodEntry={addMoodEntry} onNavigate={setActiveTab} />}
-        {activeTab === 'chat'      && <ChatTab      userProfile={userProfile} aiConfig={aiConfig} connected={connected} addMoodEntry={addMoodEntry} onOpenSettings={() => setShowSettings(true)} />}
+        {activeTab === 'chat'      && <ChatTab      userProfile={userProfile} aiConfig={aiConfig} connected={connected} addMoodEntry={addMoodEntry} onOpenSettings={() => setShowSettings(true)} onOpenSupport={() => setActiveTab('support')} />}
         {activeTab === 'health'    && <HealthTab    userProfile={userProfile} />}
         {activeTab === 'nutrition' && <NutritionTab aiConfig={aiConfig} connected={connected} onOpenSettings={() => setShowSettings(true)} />}
         {activeTab === 'journal'   && <JournalTab   addMoodEntry={addMoodEntry} onGoToChat={() => setActiveTab('chat')} />}
-        {activeTab === 'insights'  && <InsightsTab  moodHistory={moodHistory} />}
+        {activeTab === 'insights'  && <InsightsTab  moodHistory={moodHistory} userProfile={userProfile} />}
         {activeTab === 'exercises' && <ExercisesTab />}
         {activeTab === 'affirm'    && <AffirmTab />}
         {activeTab === 'support'   && <SupportTab   userProfile={userProfile} />}
