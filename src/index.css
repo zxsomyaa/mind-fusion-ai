@@ -20,3 +20,16 @@ input, textarea, select { font-family: inherit; outline: none; }
 @media (max-width: 899px) {
   .mf-onboarding-hero { display: none; }
 }
+
+/* Signed-in app shell: a left sidebar + content, matching the desktop app.
+   Below 760px it becomes a stacked top bar: brand, then a horizontally-
+   scrolling nav row, then the status/user/tools footer row. */
+.mf-shell { display: flex; }
+@media (max-width: 760px) {
+  .mf-shell { flex-direction: column; }
+  .mf-sidebar { width: 100% !important; box-sizing: border-box; }
+  .mf-sidebar-spacer { display: none; }
+  .mf-sidebar nav { flex-direction: row !important; overflow-x: auto; gap: 4px !important; padding-bottom: 4px; }
+  .mf-sidebar nav button { flex-direction: column; gap: 2px !important; min-width: 60px; font-size: 11px !important; padding: 6px 8px !important; }
+  .mf-sidebar-footer { flex-direction: row !important; flex-wrap: wrap; align-items: center; gap: 12px !important; }
+}

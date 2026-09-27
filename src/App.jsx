@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
-import { C, FONT } from './data';
+import { C, FONT, applyTheme } from './data';
 import { DEFAULT_CONFIG, PRESETS, checkConnection } from './ai';
 import Onboarding from './components/Onboarding';
+import HomeTab from './components/HomeTab';
 import ChatTab from './components/ChatTab';
 import HealthTab from './components/HealthTab';
 import NutritionTab from './components/NutritionTab';
@@ -12,6 +13,7 @@ import AffirmTab from './components/AffirmTab';
 import SupportTab from './components/SupportTab';
 
 const TABS = [
+  { id: 'today',     label: 'Today',     emoji: '🏠' },
   { id: 'chat',      label: 'Chat',      emoji: '💬' },
   { id: 'health',    label: 'Health',    emoji: '🌿' },
   { id: 'nutrition', label: 'Nutrition', emoji: '🥗' },
@@ -27,13 +29,34 @@ function load(key, fallback) {
   catch { return fallback; }
 }
 
+/** Everything this browser has stored for the signed-in user, as one file -
+ * the web equivalent of the desktop app's "Export all your data" button. */
+function exportData(user, profile) {
+  const payload = {
+    user, profile,
+    moodHistory: load('mf_mood_history', []),
+    journal: load('mf_journal', []),
+    habitLog: load('mf_habit_log', {}),
+    sleepLog: load('mf_sleep_log', {}),
+    affirmFavorites: load('mf_affirm_favs', []),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `mind_fusion_export_${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function App() {
   const [user,        setUser]        = useState(() => load('mf_user', null));
   const [userProfile, setUserProfile] = useState(() => load('mf_profile', null));
   const [aiConfig,    setAiConfig]    = useState(() => load('mf_ai_config', DEFAULT_CONFIG));
-  const [activeTab,   setActiveTab]   = useState('chat');
+  const [activeTab,   setActiveTab]   = useState(() => location.hash.slice(1) || 'today');
   const [moodHistory, setMoodHistory] = useState(() => load('mf_mood_history', []));
   const [showSettings, setShowSettings] = useState(false);
+  const [theme,       setTheme]       = useState(() => load('mf_theme', 'light'));
   // null = unknown, true = connected, false = disconnected
   const [connected,   setConnected]   = useState(null);
 
@@ -44,6 +67,21 @@ export default function App() {
       .then(() => setConnected(true))
       .catch(() => setConnected(false));
   }, [aiConfig]);
+
+  // Applying a theme mutates the shared `C` colour object in place (see
+  // data.js) rather than replacing it, so this effect also updates the one
+  // thing React doesn't re-render for us - the page background behind
+  // everything - and the signed-in shell below is fully remounted (via
+  // `key={theme}`) so every component picks up the new values, the same way
+  // the desktop app rebuilds its whole window on a theme switch.
+  useEffect(() => {
+    applyTheme(theme);
+    document.body.style.background = C.bg;
+    document.body.style.color = C.text;
+    localStorage.setItem('mf_theme', JSON.stringify(theme));
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(t => (t === 'dark' ? 'light' : 'dark'));
 
   const addMoodEntry = useCallback((moodObj) => {
     setMoodHistory(prev => {
@@ -78,91 +116,77 @@ export default function App() {
     return <Onboarding onSignup={handleSignup} onProfileComplete={handleProfileComplete} existingUser={user} />;
   }
 
-  const statusDot = connected === true  ? { color: '#52B788', label: 'Connected' }
-                  : connected === false ? { color: '#E07A5F', label: 'Not connected' }
+  const statusDot = connected === true  ? { color: C.sage,    label: 'Local AI connected' }
+                  : connected === false ? { color: '#E07A5F', label: 'Local AI not connected' }
                   : { color: '#D4A017', label: 'Checking…' };
 
+  const navBtnStyle = (active) => ({
+    display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+    background: active ? C.primaryPale : 'none', border: 'none', borderRadius: 10,
+    padding: '9px 12px', textAlign: 'left', cursor: 'pointer',
+    color: active ? C.primary : C.text, fontWeight: active ? 600 : 400,
+    fontSize: 14, fontFamily: FONT.sans,
+  });
+
+  const iconBtnStyle = { width: 30, height: 30, borderRadius: 8, border: `1px solid ${C.border}`, background: 'none', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' };
+
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', flexDirection: 'column', fontFamily: FONT.sans }}>
-      {/* Header */}
-      <header style={{
-        background: C.surface, borderBottom: `1px solid ${C.border}`,
-        padding: '10px 20px', display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100,
-        boxShadow: '0 2px 16px rgba(139,94,60,0.07)',
+    // Keyed by theme: a light<->dark switch fully remounts the signed-in shell,
+    // the same way the desktop app rebuilds its whole window on a theme change.
+    <div key={theme} className="mf-shell" style={{ minHeight: '100vh', background: C.bg, fontFamily: FONT.sans }}>
+      {/* Sidebar */}
+      <aside className="mf-sidebar" style={{
+        width: 232, flexShrink: 0, borderRight: `1px solid ${C.border}`,
+        padding: '20px 16px 16px', display: 'flex', flexDirection: 'column', gap: 4,
+        background: C.surface,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 26 }}>🌿</span>
-          <span style={{ fontFamily: FONT.serif, fontSize: 20, fontWeight: 700, color: C.primary }}>
-            Mind Fusion
-          </span>
+        <div className="mf-sidebar-brand">
+          <div style={{ fontSize: 19, fontWeight: 700, color: C.primary }}>🌿 Mind Fusion</div>
+          <div style={{ color: C.textMuted, fontSize: 11, paddingBottom: 14 }}>your wellbeing companion</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button
-            onClick={() => setShowSettings(true)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              background: C.surface, border: `1px solid ${C.border}`,
-              borderRadius: 20, padding: '5px 12px',
-              fontSize: 12, fontFamily: FONT.sans, fontWeight: 500, cursor: 'pointer',
-              color: C.textMuted,
-            }}
-          >
-            <span style={{
-              width: 8, height: 8, borderRadius: '50%',
-              background: statusDot.color, flexShrink: 0,
-              boxShadow: connected === true ? `0 0 6px ${statusDot.color}` : 'none',
-            }} />
-            {statusDot.label}
-          </button>
+
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {TABS.map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={navBtnStyle(activeTab === tab.id)}>
+              <span style={{ fontSize: 16 }}>{tab.emoji}</span>{tab.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="mf-sidebar-spacer" style={{ flex: 1 }} />
+
+        <div className="mf-sidebar-footer" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: statusDot.color }}>
+            ● {statusDot.label}
+          </div>
+
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{
-              width: 32, height: 32, borderRadius: '50%',
+              width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
               background: C.primaryPale, display: 'flex', alignItems: 'center',
-              justifyContent: 'center', fontSize: 13, fontWeight: 600, color: C.primary,
+              justifyContent: 'center', fontSize: 14, fontWeight: 700, color: C.primary,
             }}>
               {(user.name || '?').charAt(0).toUpperCase()}
             </div>
-            <button
-              onClick={handleSignOut}
-              style={{ background: 'none', border: 'none', color: C.textMuted, fontSize: 12, cursor: 'pointer' }}
-            >
-              Sign out
-            </button>
+            <span style={{ fontWeight: 600, fontSize: 13, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name}</span>
           </div>
-        </div>
-      </header>
 
-      {/* Tab Nav */}
-      <nav style={{
-        background: C.surface, borderBottom: `1px solid ${C.border}`,
-        display: 'flex', overflowX: 'auto', padding: '0 4px',
-        position: 'sticky', top: 53, zIndex: 99,
-        scrollbarWidth: 'none',
-      }}>
-        {TABS.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              background: 'none', border: 'none',
-              borderBottom: `3px solid ${activeTab === tab.id ? C.primary : 'transparent'}`,
-              padding: '9px 14px', cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-              minWidth: 66, transition: 'border-color 0.2s, color 0.2s',
-              color: activeTab === tab.id ? C.primary : C.textMuted,
-            }}
-          >
-            <span style={{ fontSize: 17 }}>{tab.emoji}</span>
-            <span style={{ fontSize: 10, fontWeight: activeTab === tab.id ? 600 : 400, whiteSpace: 'nowrap' }}>
-              {tab.label}
-            </span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => setShowSettings(true)} title="Local AI settings" style={iconBtnStyle}>⚙</button>
+            <button onClick={toggleTheme} title="Switch light / dark theme" style={iconBtnStyle}>{theme === 'dark' ? '☀️' : '🌙'}</button>
+            <button onClick={() => exportData(user, userProfile)} title="Export all your data as JSON" style={iconBtnStyle}>⬇</button>
+          </div>
+
+          <button onClick={handleSignOut} style={{ ...navBtnStyle(false), justifyContent: 'center', border: `1.5px solid ${C.border}` }}>
+            Sign out
           </button>
-        ))}
-      </nav>
+        </div>
+      </aside>
 
       {/* Content */}
-      <main style={{ flex: 1, maxWidth: 920, margin: '0 auto', width: '100%', padding: '20px 16px 32px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      <main style={{ flex: 1, maxWidth: 920, margin: '0 auto', width: '100%', padding: '24px 20px 32px' }}>
+        {activeTab === 'today'     && <HomeTab      userName={user.name} userProfile={userProfile} moodHistory={moodHistory} addMoodEntry={addMoodEntry} onNavigate={setActiveTab} />}
         {activeTab === 'chat'      && <ChatTab      userProfile={userProfile} aiConfig={aiConfig} connected={connected} addMoodEntry={addMoodEntry} onOpenSettings={() => setShowSettings(true)} />}
         {activeTab === 'health'    && <HealthTab    userProfile={userProfile} />}
         {activeTab === 'nutrition' && <NutritionTab aiConfig={aiConfig} connected={connected} onOpenSettings={() => setShowSettings(true)} />}
@@ -181,6 +205,7 @@ export default function App() {
       }}>
         Mind Fusion supports your wellbeing but does not replace professional medical or mental health care.
       </footer>
+      </div>
 
       {showSettings && (
         <AISettingsModal

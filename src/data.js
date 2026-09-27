@@ -1,5 +1,9 @@
 // ─── Design Tokens ───────────────────────────────────────────
-export const C = {
+// `C` is mutated in place (see applyTheme below) rather than reassigned, so
+// every component that imported it keeps working from the same object and
+// picks up the new palette the next time it renders - mirrors how the
+// desktop app's data.py swaps its shared COLORS dict for a theme change.
+export const LIGHT_COLORS = {
   bg: '#FAF8F4',
   surface: '#FFFFFF',
   primary: '#8B5E3C',
@@ -14,6 +18,28 @@ export const C = {
   shadow: '0 4px 20px rgba(139,94,60,0.09)',
   shadowLg: '0 8px 40px rgba(139,94,60,0.14)',
 };
+
+export const DARK_COLORS = {
+  bg: '#1B1714',
+  surface: '#26211D',
+  primary: '#D4A373',
+  primaryLight: '#E6BC8F',
+  primaryPale: '#3A2F27',
+  sage: '#9DBB96',
+  sagePale: '#26332A',
+  sageLight: '#4E6B4A',
+  text: '#F1E9E2',
+  textMuted: '#A99B90',
+  border: '#3B332D',
+  shadow: '0 4px 20px rgba(0,0,0,0.35)',
+  shadowLg: '0 8px 40px rgba(0,0,0,0.5)',
+};
+
+export const C = { ...LIGHT_COLORS };
+
+export function applyTheme(name) {
+  Object.assign(C, name === 'dark' ? DARK_COLORS : LIGHT_COLORS);
+}
 
 export const FONT = {
   serif: "'Playfair Display', Georgia, serif",
