@@ -16,22 +16,24 @@
 
 **Mind Fusion** is a mental wellbeing application built in two stages as part of a final-year project:
 
-1. **`src/`** — the original **web prototype**, a React 19 + Vite single-page app that established the product's feature set and UX.
-2. **`desktop_app/`** — the **production build**: a native **desktop application** rewritten from scratch in **Python (PySide6 / Qt + SQLite)**, delivering full feature parity with the web prototype plus speech-to-text, live facial-expression detection and richer analytics — all running as a real, installable desktop program rather than a browser tab.
+1. **`src/`** — the original **web prototype**, a React 19 + Vite single-page app that established the product's design and UX, and has since been brought up to close visual and functional parity with the desktop app (same sidebar navigation, Today dashboard, dark mode, and full Chat / Nutrition / Exercises / Insights behaviour), persisted in the browser's `localStorage`.
+2. **`desktop_app/`** — the **production build**: a native **desktop application** rewritten from scratch in **Python (PySide6 / Qt + SQLite)**, adding local speech-to-text and live facial-expression detection on top of everything the web app has — all running as a real, installable desktop program rather than a browser tab.
 
 The defining constraint of this project is **data sovereignty**: every AI capability — conversational support, meal-photo analysis, speech transcription and facial emotion recognition — runs on **models installed locally on the user's own machine**. No user message, photo, voice recording, or journal entry is ever sent to a third-party or cloud AI provider (no OpenAI, no Claude, no Gemini). The application talks only to a local model server ([Ollama](https://ollama.com) by default) on `localhost`.
 
-> The desktop application (`desktop_app/`) is the primary, evaluated deliverable of this project. The React app is retained as the original prototype for reference.
+> The desktop application (`desktop_app/`) is the primary, evaluated deliverable of this project. The React app remains the original prototype, kept up to date and deployed as a live demo so the design can be tried without installing anything.
 
 ---
 
 ## Live Demo
 
-The original web prototype is deployed and viewable in your browser:
+The web version is deployed and fully usable in your browser — sign up, go through onboarding, and try every tab:
 
 ### 👉 [zxsomyaa.github.io/mind-fusion-ai](https://zxsomyaa.github.io/mind-fusion-ai/)
 
-This is a static build of `src/`, so you can walk through the UI directly. Note that it's the **web prototype**, not the desktop app — and features that call a local AI model (Chat, Nutrition) will only respond if you have [Ollama](https://ollama.com) running on your own machine, since the page talks to `localhost` and never to a cloud server.
+This is a static build of `src/`. It is the **web prototype**, not the desktop app, so two desktop-only capabilities won't work here: the live camera mood check (no local face-emotion model in the browser) and real local Whisper speech-to-text (the web build uses the browser's own Web Speech API instead, when available). Everything else — Today, Chat, Nutrition, Journal, Insights, Exercises, Affirm, Support, dark mode — runs the same logic as the desktop app, against your browser's own storage.
+
+Chat and Nutrition need a local AI model to actually reply: they'll only respond if you have [Ollama](https://ollama.com) running on your own machine, since the page talks to `localhost` and never to a cloud server.
 
 **To actually connect the live demo to your local Ollama**, start it with this page's origin allowed — Ollama blocks cross-origin browser requests by default:
 
@@ -67,8 +69,8 @@ Personal greeting, check-in streak, one-tap mood check-in, a daily **habit check
 A local-LLM wellbeing companion with:
 - Conversation history persisted and replayed between sessions (last 20 messages kept in context)
 - A **reply-language picker** — respond in English, Hindi, Hinglish (Hindi typed in Roman letters), Spanish, French, German and more, remembered per user
-- 🎤 **Speech-to-text** via a local Whisper model
-- 📷 A **live camera window** for facial-expression-based mood detection (see faces boxed in real time)
+- 🎤 **Speech-to-text** via a local Whisper model (desktop app) or the browser's own speech recognition (web app)
+- 📷 A **live camera window** for facial-expression-based mood detection (desktop app only — no browser equivalent)
 - A **crisis-support banner** that surfaces country-specific helplines when a message suggests self-harm risk
 - A **scripted, on-device fallback reply** if the local AI server is unreachable — the app never surfaces a raw connection error to the user
 
@@ -103,8 +105,10 @@ Dark mode (remembered across launches) · one-click full data export to JSON · 
 | Charts & analytics UI | Hand-drawn with Qt `QPainter` (no charting library dependency) |
 | Testing | `pytest` / `unittest`, 101 automated tests |
 | — | — |
-| Original prototype UI | React 19, Vite 8 |
-| Original prototype AI | TensorFlow.js (`@tensorflow-models`, `ml5`) for in-browser inference |
+| Web prototype UI | React 19, Vite 8, hand-rolled inline styles (no CSS framework) |
+| Web prototype persistence | Browser `localStorage` (per-device; nothing is sent to a server) |
+| Web prototype voice input | Browser Web Speech API, where supported — a substitute for the desktop app's local Whisper |
+| Web prototype charts | Hand-rolled SVG (`src/components/charts.jsx`) — a JS/SVG port of the same `RingGauge` / `DonutChart` / `BarChart` the desktop app draws with Qt |
 
 ## Local AI Models
 
@@ -123,9 +127,14 @@ Nothing in this table ever leaves the user's machine.
 
 ```
 mind-fusion-ai/
-├── src/                      React + Vite web prototype (original design)
-│   ├── components/            one component per feature tab
-│   └── data.js                shared static content
+├── src/                      React + Vite web prototype (brought to parity with the desktop app)
+│   ├── App.jsx                 signed-in shell: sidebar nav, theme switching, settings modal
+│   ├── data.js                  static content + shared design tokens (theme-aware, see applyTheme)
+│   ├── nutritionLogic.js        meal-analysis response parsing (mirrors nutrition_logic.py)
+│   ├── insightsLogic.js         analytics engine (mirrors insights_logic.py)
+│   ├── exerciseStorage.js       shared exercise-session log (used by Exercises and Insights)
+│   └── components/              one component per feature tab, plus charts.jsx (RingGauge,
+│                                 DonutChart, BarChart, LineChart, MoodCalendar) and AddExerciseModal.jsx
 │
 ├── desktop_app/                ★ the primary deliverable — native desktop application
 │   ├── main.py                 entry point
