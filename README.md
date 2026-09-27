@@ -6,7 +6,7 @@
 
 *Mood tracking · Journaling · Nutrition analysis · Guided exercises · Insights — with every AI feature running on-device, never in the cloud.*
 
-[Overview](#overview) · [Screenshots](#screenshots) · [Features](#features) · [Architecture](#architecture) · [Tech Stack](#tech-stack) · [Getting Started](#getting-started) · [Testing & Evidence](#testing--evidence) · [Limitations](#known-limitations)
+[Overview](#overview) · [Live Demo](#live-demo) · [Screenshots](#screenshots) · [Features](#features) · [Tech Stack](#tech-stack) · [Getting Started](#getting-started) · [Testing & Evidence](#testing--evidence)
 
 </div>
 
@@ -25,17 +25,25 @@ The defining constraint of this project is **data sovereignty**: every AI capabi
 
 ---
 
+## Live Demo
+
+The original web prototype is deployed and viewable in your browser:
+
+### 👉 [zxsomyaa.github.io/mind-fusion-ai](https://zxsomyaa.github.io/mind-fusion-ai/)
+
+This is a static build of `src/`, so you can walk through the UI directly. Note that it's the **web prototype**, not the desktop app — and features that call a local AI model (Chat, Nutrition) will only respond if you have [Ollama](https://ollama.com) running on your own machine, since the page talks to `localhost` and never to a cloud server.
+
+For the full, primary deliverable (native desktop app), see [Getting Started](#getting-started) below.
+
+---
+
 ## Screenshots
 
-| Today dashboard | Chat companion | Crisis-support alert |
-|:---:|:---:|:---:|
-| ![Today](desktop_app/screenshots/today.png) | ![Chat](desktop_app/screenshots/chat.png) | ![Crisis alert](desktop_app/screenshots/chat_crisis_alert_dark.png) |
+| Today dashboard | Chat companion |
+|:---:|:---:|
+| ![Today](desktop_app/screenshots/today.png) | ![Chat](desktop_app/screenshots/chat.png) |
 
-| Nutrition analysis | Insights dashboard | Guided exercises |
-|:---:|:---:|:---:|
-| ![Nutrition](desktop_app/screenshots/nutrition.png) | ![Insights](desktop_app/screenshots/insights.png) | ![Exercises](desktop_app/screenshots/exercises.png) |
-
-Dark mode and additional screens (onboarding, journal, settings) are in [`desktop_app/screenshots/`](desktop_app/screenshots/).
+More screens (nutrition, insights, exercises, dark mode, onboarding, journal) are in [`desktop_app/screenshots/`](desktop_app/screenshots/).
 
 ---
 
@@ -70,43 +78,6 @@ Seven guided practices (breathing, relaxation, body scan, gratitude, grounding) 
 
 ### Also
 Dark mode (remembered across launches) · one-click full data export to JSON · a local AI settings panel supporting Ollama, LM Studio, or any OpenAI-compatible local server.
-
----
-
-## Architecture
-
-```mermaid
-flowchart TB
-    subgraph UI["PySide6 / Qt UI"]
-        Today["Today"] & Chat["Chat"] & Journal["Journal"]
-        Nutrition["Nutrition"] & Insights["Insights"] & Exercises["Exercises"]
-    end
-
-    subgraph Logic["Pure-Python business logic (no Qt, no I/O)"]
-        Mood["Mood keyword detector\n(English + Hindi/Hinglish)"]
-        Recs["Recommendation engine"]
-        NutriLogic["Nutrition response parser"]
-        InsightsLogic["Insights / analytics engine"]
-    end
-
-    subgraph Local["Everything below runs on this machine only"]
-        DB[("SQLite\nmind_fusion.db")]
-        Ollama["Ollama local server\n(localhost:11434)"]
-        Whisper["faster-whisper\n(speech-to-text)"]
-        Vision["YuNet + FER+\n(ONNX, face & emotion)"]
-    end
-
-    UI --> Logic
-    Logic --> DB
-    Chat -. text / image .-> Ollama
-    Chat -. audio .-> Whisper
-    Chat -. camera frame .-> Vision
-    Nutrition -. meal photo .-> Ollama
-
-    Internet(("☁ Internet / Cloud AI")) -.->|"never contacted"| Ollama
-```
-
-**Design principle:** the UI layer never talks to the network or the filesystem directly — it calls into pure-Python modules (`data.py`, `nutrition_logic.py`, `insights_logic.py`) that are independently unit-testable, and background `QThread` workers (`workers.py`) keep every model call off the UI thread. See [`desktop_app/README.md`](desktop_app/README.md#project-layout) for the full module map.
 
 ---
 
@@ -225,30 +196,9 @@ Beyond the unit suite, [`desktop_app/evidence/`](desktop_app/evidence/) contains
 
 ---
 
-## Known Limitations
-
-This project documents its own failure modes rather than hiding them — the full detail, with evidence, is in [`evidence/SUMMARY.md`](desktop_app/evidence/SUMMARY.md). In summary:
-
-- **Mood detection is keyword-based, not a language model.** It does not handle negation (*"I am **not** stressed"* is still detected as stressed) and has no notion of ambiguity when a message contains conflicting emotional words.
-- **Independent channels are not fused.** Text, voice-transcript and camera-based mood detection each produce an independent result; there is currently no mechanism that reconciles disagreement between them into a single confidence-scored outcome.
-- **Vision-model output is not fully deterministic** — analysing the same meal photo twice can return different numbers, and an image containing no food can still produce an invented "meal" in some cases. The app's parser rejects malformed output but cannot verify that plausible-looking output is *correct*.
-- **One outbound DNS lookup** (`huggingface.co`) occurs the first time the speech-to-text model loads, to check for updates — no audio or user data is included in it, and it does not recur once the model is cached (or when `HF_HUB_OFFLINE=1` is set).
-- The SQLite database file is **not encrypted at rest** by the application itself (disk-level encryption such as FileVault/BitLocker is the user's own responsibility).
-
----
-
 ## Privacy
 
 No user data — messages, journal entries, mood history, meal photos or voice recordings — is transmitted to any third-party service. The only network traffic the application generates in normal use is to `localhost` (the local Ollama server) and, once, to check for a speech-to-text model update on first use. This is independently verified in [`evidence/output/06_network_guard_default.txt`](desktop_app/evidence/output/06_network_guard_default.txt).
-
----
-
-## Acknowledgments
-
-- [Ollama](https://ollama.com), [Meta Llama 3](https://llama.meta.com/), [LLaVA](https://llava-vl.github.io/), [Mistral AI](https://mistral.ai/) — local model runtime and models
-- [faster-whisper](https://github.com/SYSTRAN/faster-whisper) / [OpenAI Whisper](https://github.com/openai/whisper) — speech-to-text
-- [OpenCV YuNet](https://github.com/opencv/opencv_zoo) and the FER+ emotion model — local face & expression detection
-- Meal test photograph: *"Rice plate Jharkhand"*, Wikimedia Commons, CC BY-SA 4.0 (credited in full in `desktop_app/evidence/assets/meal_photo_source.json`)
 
 ---
 
