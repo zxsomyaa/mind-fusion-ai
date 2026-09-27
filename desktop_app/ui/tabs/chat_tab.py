@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
 from ai_client import chat_ai
 from data import (
     CHAT_LANGUAGES, COLORS as C, CRISIS_FALLBACK, MOOD_FALLBACKS, MOODS, SUPPORT_RESOURCES, default_chat_language,
-    detect_crisis, detect_mood, get_personalized_recs, language_instruction, whisper_language,
+    detect_crisis, detect_mood, get_personalized_recs, language_instruction, language_reminder, whisper_language,
 )
 from ui.flow_layout import FlowLayout
 from ui.camera_dialog import CameraDialog
@@ -27,7 +27,15 @@ def build_system_prompt(profile, language=None):
     if language is None:
         language = default_chat_language(profile.get("language"))
 
-    prompt = f"""You are a warm, caring wellbeing companion. You speak like a trusted, thoughtful friend - not a therapist, not a chatbot.
+    instruction = language_instruction(language)
+
+    # Local models (llama3.2 in particular) are noticeably more likely to
+    # actually switch language when the instruction is the *first* thing they
+    # read, not just the last - and when it's repeated, not stated once. Tested
+    # directly against Ollama: a single instruction at the end was ignored for
+    # Arabic after a few Hindi-language turns; leading with it and repeating it
+    # at the end produced a compliant reply. So it appears twice on purpose.
+    prompt = (f"{instruction}\n\n" if instruction else "") + f"""You are a warm, caring wellbeing companion. You speak like a trusted, thoughtful friend - not a therapist, not a chatbot.
 
 About the person you're talking with:
 - Health conditions: {cond_labels}
@@ -44,7 +52,6 @@ Your tone and style:
 - If they seem distressed, gently acknowledge it before anything else.
 - They may write in Hinglish (Hindi typed in English letters, e.g. "mujhe dar lagta hai" means "I feel scared") or mix languages. Understand it as the language it is, not as English."""
 
-    instruction = language_instruction(language)
     if instruction:
         prompt += "\n\n" + instruction
     return prompt
@@ -377,6 +384,13 @@ class ChatTab(QWidget):
         self.send_btn.setEnabled(False)
 
         api_messages = [{"role": m["role"], "content": m["content"]} for m in self.messages[-20:]]
+        reminder = language_reminder(self.language)
+        if reminder:
+            # Inserted as its own message right before the turn it generates
+            # from, not just once at the top of the conversation - a small
+            # local model weighs an instruction here far more reliably than
+            # one several turns back (see language_reminder's docstring).
+            api_messages.insert(len(api_messages) - 1, {"role": "system", "content": reminder})
         system_prompt = build_system_prompt(self.profile, self.language)
         config = self.get_ai_config()
 

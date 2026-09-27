@@ -233,7 +233,35 @@ def language_instruction(code):
         return "IMPORTANT: Reply in English, even if the person writes in another language."
     if code in LANGUAGE_ENGLISH_NAMES:
         name = LANGUAGE_ENGLISH_NAMES[code]
-        return f"IMPORTANT: Respond entirely in {name}, even if the person writes in another language."
+        # Small local models are prone to sliding back into whatever language the
+        # conversation history is already in (or, for a language they're weak at
+        # like Arabic, into English or a transliteration) unless told firmly and
+        # concretely what "reply in X" excludes. Spelling that out - script,
+        # no English, no transliteration, ignore prior turns - measurably
+        # improves compliance with llama3.2 in testing; see build_system_prompt,
+        # which also repeats this instruction as the first line, not just the last.
+        return (f"IMPORTANT: Respond entirely in {name} - {name} script only, no English words and no "
+                f"transliteration - even if the person writes in another language or the conversation "
+                f"so far has been in a different language.")
+    return ""
+
+
+def language_reminder(code):
+    """A short reminder inserted as its own message right before the final
+    user turn (see chat_tab.py), not just in the system prompt - tested
+    directly against Ollama, a small local model follows a language switch
+    far more reliably when the instruction sits right next to the turn it
+    generates from, rather than only at the start of the conversation. '' when
+    no reminder is needed (auto - there is nothing to remind it to do)."""
+    if code in (None, "", "auto"):
+        return ""
+    if code == "hinglish":
+        return ("REMINDER: reply in Hinglish (Hindi written in English letters), not Devanagari, regardless "
+                "of what language earlier messages in this conversation were in.")
+    name = LANGUAGE_ENGLISH_NAMES.get(code, "English" if code == "en" else None)
+    if name:
+        return (f"REMINDER: reply in {name} script only - no English, no other language, no transliteration - "
+                f"regardless of what language earlier messages in this conversation were in.")
     return ""
 
 

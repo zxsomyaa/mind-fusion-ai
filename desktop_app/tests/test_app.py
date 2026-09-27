@@ -101,6 +101,17 @@ class LanguageTests(unittest.TestCase):
         self.assertEqual([data.whisper_language(c) for c in ("auto", "hinglish", "hi", "es", "en")],
                          [None, None, "hi", "es", "en"])
 
+    def test_language_reminder_is_empty_only_for_auto(self):
+        # 'auto' means "whatever the user writes" - there is nothing to remind the
+        # model to switch to, so it alone gets no reminder message.
+        self.assertEqual(data.language_reminder("auto"), "")
+        self.assertEqual(data.language_reminder(None), "")
+        self.assertEqual(data.language_reminder("nope"), "")
+        for code in (c["code"] for c in data.CHAT_LANGUAGES if c["code"] != "auto"):
+            self.assertTrue(data.language_reminder(code), code)
+        self.assertIn("Spanish", data.language_reminder("es"))
+        self.assertIn("Hinglish", data.language_reminder("hinglish"))
+
 
 class ImageLoaderTests(unittest.TestCase):
     @classmethod
