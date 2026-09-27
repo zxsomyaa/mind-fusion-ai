@@ -33,6 +33,14 @@ The original web prototype is deployed and viewable in your browser:
 
 This is a static build of `src/`, so you can walk through the UI directly. Note that it's the **web prototype**, not the desktop app — and features that call a local AI model (Chat, Nutrition) will only respond if you have [Ollama](https://ollama.com) running on your own machine, since the page talks to `localhost` and never to a cloud server.
 
+**To actually connect the live demo to your local Ollama**, start it with this page's origin allowed — Ollama blocks cross-origin browser requests by default:
+
+```bash
+OLLAMA_ORIGINS=https://zxsomyaa.github.io ollama serve
+```
+
+With that running, the page (loaded over HTTPS) can reach `http://localhost:11434` directly from your browser — nothing passes through GitHub or any third party.
+
 For the full, primary deliverable (native desktop app), see [Getting Started](#getting-started) below.
 
 ---
