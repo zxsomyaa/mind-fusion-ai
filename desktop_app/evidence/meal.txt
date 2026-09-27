@@ -1,0 +1,187 @@
+==============================================================================
+Nutrition analyser: the same photograph analysed twice
+Test cases: TC-F19, TC-E12, TC-F22
+Run:        2026-09-26 19:50:13
+Machine:    Darwin arm64, Python 3.14.5
+==============================================================================
+
+Photograph: evidence/assets/meal_photo.jpg
+Model:      llava via http://localhost:11434
+
+--- run 1 ------------------------------------------------------------
+  63.1 s, 708 characters
+ ```json
+
+{
+  "foods": ["Chapati", "Curry (possibly meat or vegetarian)," "Rice", "Dip"],
+  "calories": 800,
+  "protein_g": 50,
+  "carbs_g": 200,
+  "fat_g": 10,
+  "fibre_g": 70,
+  "mood_note": "Feels good. Balanced meal with a variety of nutrients.",
+  "suggestion": "This is a nutritious meal providing carbohydrates for energy, protein for muscle building and repair, fat for energy and to support cell function, and fiber for digestive health.",
+  "balance_score": "B" // Balance score is subjective and depends on individual dietary needs. This could range from A (excellent) to F (poor). In this case, it appears to be a well-rounded meal that covers the major macronutrients and micronutrients. 
+}
+``` 
+
+--- run 2 ------------------------------------------------------------
+  991.0 s, 1818 characters
+ ```json
+
+{
+  "foods": [
+    {
+      "name": "Rice",
+      "calories": 150,
+      "protein_g": 4,
+      "carbs_g": 32,
+      "fat_g": 1.5,
+      "fibre_g": 2.5,
+      "mood_note": "Neutral",
+      "suggestion": "Balanced meal with a mix of carbs, proteins and fats",
+      "balance_score": 7
+    },
+    {
+      "name": "Curry with paneer",
+      "calories": 150,
+      "protein_g": 9,
+      "carbs_g": 10,
+      "fat_g": 4.5,
+      "fibre_g": 2.5,
+      "mood_note": "Neutral",
+      "suggestion": "Balanced meal with a mix of carbs, proteins and fats",
+      "balance_score": 6
+    },
+    {
+      "name": "Naan or roti",
+      "calories": 200,
+      "protein_g": 5.5,
+      "carbs_g": 40,
+      "fat_g": 3,
+      "fibre_g": 3.5,
+      "mood_note": "Neutral",
+      "suggestion": "Balanced meal with a mix of carbs, proteins and fats",
+      "balance_score": 7
+    },
+    {
+      "name": "Soup or raita",
+      "calories": 100,
+      "protein_g": 4.5,
+      "carbs_g": 8,
+      "fat_g": 1.5,
+      "fibre_g": 2,
+      "mood_note": "Neutral",
+      "suggestion": "Balanced meal with a mix of carbs, proteins and fats",
+      "balance_score": 7
+    }
+  ],
+  "calories": 600,
+  "protein_g": 21.5,
+  "carbs_g": 136,
+  "fat_g": 10.5,
+  "fibre_g": 8.7,
+  "mood_note": "Neutral",
+  "suggestion": "Balanced meal with a mix of carbs, proteins and fats",
+  "balance_score": 6.5
+}
+```
+
+The meal includes rice, curry (or paneer), naan or roti, and soup or raita. It appears to be balanced with a variety of food groups represented, providing a mix of carbohydrates, proteins, and fats, as well as some fiber. The balance_score suggests a relatively balanced meal but could potentially improve by increasing the proportion of protein-rich items or incorporating more variety in the vegetables for additional vitamins and minerals. 
+
+--- what changed between the two runs --------------------------------------
+numbers in run 1: 800, 50, 200, 10, 70
+numbers in run 2: 150, 4, 32, 1.5, 2.5, 7, 150, 9, 10, 4.5, 2.5, 6, 200, 5.5, 40, 3, 3.5, 7, 100, 4.5, 8, 1.5, 2, 7, 600, 21.5, 136, 10.5, 8.7, 6.5
+identical: NO — TC-E12 fails
+
+--- run 1
++++ run 2
+@@ -3,12 +3,59 @@
+ {
+-  "foods": ["Chapati", "Curry (possibly meat or vegetarian)," "Rice", "Dip"],
+-  "calories": 800,
+-  "protein_g": 50,
+-  "carbs_g": 200,
+-  "fat_g": 10,
+-  "fibre_g": 70,
+-  "mood_note": "Feels good. Balanced meal with a variety of nutrients.",
+-  "suggestion": "This is a nutritious meal providing carbohydrates for energy, protein for muscle building and repair, fat for energy and to support cell function, and fiber for digestive health.",
+-  "balance_score": "B" // Balance score is subjective and depends on individual dietary needs. This could range from A (excellent) to F (poor). In this case, it appears to be a well-rounded meal that covers the major macronutrients and micronutrients. 
++  "foods": [
++    {
++      "name": "Rice",
++      "calories": 150,
++      "protein_g": 4,
++      "carbs_g": 32,
++      "fat_g": 1.5,
++      "fibre_g": 2.5,
++      "mood_note": "Neutral",
++      "suggestion": "Balanced meal with a mix of carbs, proteins and fats",
++      "balance_score": 7
++    },
++    {
++      "name": "Curry with paneer",
++      "calories": 150,
++      "protein_g": 9,
++      "carbs_g": 10,
++      "fat_g": 4.5,
++      "fibre_g": 2.5,
++      "mood_note": "Neutral",
++      "suggestion": "Balanced meal with a mix of carbs, proteins and fats",
++      "balance_score": 6
++    },
++    {
++      "name": "Naan or roti",
++      "calories": 200,
++      "protein_g": 5.5,
++      "carbs_g": 40,
++      "fat_g": 3,
++      "fibre_g": 3.5,
++      "mood_note": "Neutral",
++      "suggestion": "Balanced meal with a mix of carbs, proteins and fats",
++      "balance_score": 7
++    },
++    {
++      "name": "Soup or raita",
++      "calories": 100,
++      "protein_g": 4.5,
++      "carbs_g": 8,
++      "fat_g": 1.5,
++      "fibre_g": 2,
++      "mood_note": "Neutral",
++      "suggestion": "Balanced meal with a mix of carbs, proteins and fats",
++      "balance_score": 7
++    }
++  ],
++  "calories": 600,
++  "protein_g": 21.5,
++  "carbs_g": 136,
++  "fat_g": 10.5,
++  "fibre_g": 8.7,
++  "mood_note": "Neutral",
++  "suggestion": "Balanced meal with a mix of carbs, proteins and fats",
++  "balance_score": 6.5
+ }
+-``` 
++```
++
++The meal includes rice, curry (or paneer), naan or roti, and soup or raita. It appears to be balanced with a variety of food groups represented, providing a mix of carbohydrates, proteins, and fats, as well as some fiber. The balance_score suggests a relatively balanced meal but could potentially improve by increasing the proportion of protein-rich items or incorporating more variety in the vegetables for additional vitamins and minerals. 
+
+--- an image containing no food (TC-F22) ------------------------------------
+  17.0 s, 284 characters
+ ```json
+
+{
+  "foods": ["Laptop"],
+  "calories": "10",
+  "protein_g": "2",
+  "carbs_g": "5",
+  "fat_g": "3",
+  "fibre_g": "1",
+  "mood_note": "Neutral",
+  "suggestion": "Consider adding a well-balanced meal to provide energy and essential nutrients.",
+  "balance_score": "5/10"
+}
+``` 
+
+TC-F22 fails if the model has invented a meal above.

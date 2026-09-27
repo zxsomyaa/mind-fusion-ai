@@ -1,0 +1,46 @@
+Mind Fusion Desktop - voice check-in leaves no audio file
+date   : 2026-09-26 19:22:59
+command: python evidence/05_no_audio_file.py
+
+1. STATIC - can the voice code write a file at all?
+   $ grep -nE 'open\(|\.write\(|\.save\(|wave\.|soundfile|tempfile|NamedTemporary|to_file|shutil|os\.remove|Path\(.*\)\.write' voice.py
+   (no matches - voice.py contains no file-writing calls)
+   how chat_tab.py uses the recording (every reference):
+   14:    detect_crisis, detect_mood, get_personalized_recs, language_instruction, whisper_language,
+   18:from voice import MicRecorder, TranscribeWorker
+   134:        self.recorder = MicRecorder()
+   436:                self.recorder.start()
+   444:            audio = self.recorder.stop()
+   449:            self._transcribe_worker = TranscribeWorker(audio, language=whisper_language(self.language))
+   voice.py stores captured audio in a Python list of numpy arrays (self._frames) and returns one numpy array.
+
+2. DYNAMIC - snapshot -> real record/transcribe path -> snapshot
+   places scanned (skipping venv/.git/__pycache__/evidence assets):
+     /private/var/folders/00/56d3ql2s2z3g07z26bzhsr0r0000gp/T
+     /private/tmp
+     /private/var/tmp
+     /Users/somya/mind-fusion-ai/desktop_app
+     /Users/somya/.cache
+   test speech: 'I feel a bit anxious about my exam tomorrow'  (2.7 s, 16000 Hz) - macOS text-to-speech, in /private/tmp/claude-502/-Users-somya-mind-fusion-ai/359f162f-3cef-4b12-a59c-de2ea10f2e56/scratchpad/assets/tts/
+   snapshot before: 1,069 files
+   MicRecorder.stop() returned: ndarray float32 with 42,726 samples (2.7 s) - held in memory
+   transcript: 'I feel a bit anxious about my exam tomorrow.'
+   snapshot after : 1,069 files
+   files created : 0
+   files modified: 1
+     modified /Users/somya/.cache/huggingface/hub/models--Systran--faster-whisper-base/refs/main   (40 bytes)
+   AUDIO FILES among them (by extension or file header): 0
+   RESULT: PASS - no audio file was written
+
+3. CONTROL - prove the scan can see an audio file when one exists
+   files created : 1
+   files modified: 0
+     NEW      /private/var/folders/00/56d3ql2s2z3g07z26bzhsr0r0000gp/T/control_check.wav   (16044 bytes)
+   AUDIO FILES among them (by extension or file header): 1
+     -> /private/var/folders/00/56d3ql2s2z3g07z26bzhsr0r0000gp/T/control_check.wav  (detected by extension)
+   CONTROL RESULT: scan detected the planted .wav, so an empty result above is meaningful
+
+test-input files (excluded from the scan on purpose): ['/private/tmp/claude-502/-Users-somya-mind-fusion-ai/359f162f-3cef-4b12-a59c-de2ea10f2e56/scratchpad/assets/tts/checkin.aiff', '/private/tmp/claude-502/-Users-somya-mind-fusion-ai/359f162f-3cef-4b12-a59c-de2ea10f2e56/scratchpad/assets/tts/checkin.wav']
+system temp dir: /var/folders/00/56d3ql2s2z3g07z26bzhsr0r0000gp/T
+$ ls -la /var/folders/00/56d3ql2s2z3g07z26bzhsr0r0000gp/T | grep -iE '\.(wav|aiff?|mp3|m4a|flac|ogg|webm|caf)$'
+(no audio files in the system temp directory)

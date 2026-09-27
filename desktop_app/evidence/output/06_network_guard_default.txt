@@ -1,0 +1,40 @@
+Mind Fusion Desktop - network evidence (socket-level guard)
+date   : 2026-09-26 19:44:48
+command: python evidence/06_network_guard.py   (HF_HUB_OFFLINE=<not set>)
+guard  : every connect()/getaddrinfo() logged; anything not 127.0.0.0/8 or ::1 is refused
+
+A. text check-in through the app's own functions
+   detect_mood -> anxious ; recommendations -> 4 ; (pure Python, no I/O)
+   chat_ai (llama3.2 via http://localhost:11434) returned 129 characters in 6.1 s
+   socket events: 2   local: 2   EXTERNAL attempts (all blocked): 0
+   local destinations : 127.0.0.1:11434, localhost
+
+B. voice check-in: faster-whisper 'base' transcribing a spoken clip
+   loaded model + transcribed in 1.5 s -> 'I feel a bit anxious about my exam tomorrow.'
+   socket events: 1   local: 0   EXTERNAL attempts (all blocked): 1
+   EXTERNAL ATTEMPT   : dns-lookup -> huggingface.co
+
+C. meal analysis: ai_client.vision_ai (llava) on the sample photo
+   vision_ai returned 27 characters in 10.1 s
+   socket events: 2   local: 2   EXTERNAL attempts (all blocked): 0
+   local destinations : 127.0.0.1:11434, localhost
+
+D. face expression: YuNet detector + FER+ classifier on a photo (ONNX, local files)
+   detector + classifier constructed OK from the local .onnx files in desktop_app/models/
+   detector ran on the meal photo (contains no face): 0 face(s)
+   socket events: 0   local: 0   EXTERNAL attempts (all blocked): 0
+
+E. the operating system's view of this process (lsof) at the end of the run
+   $ lsof -nP -a -p 8248 -i
+   (no open internet sockets held by this process at this moment)
+
+ALL SOCKET EVENTS (label, kind, destination, allowed):
+   A  dns-lookup localhost                        local
+   A  connect    127.0.0.1:11434                  local
+   B  dns-lookup huggingface.co                   EXTERNAL - BLOCKED
+   C  dns-lookup localhost                        local
+   C  connect    127.0.0.1:11434                  local
+
+RESULT: FINDING - 1 attempted non-local connection(s), all blocked by the guard; see the sections above for which path made them
+/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/multiprocessing/resource_tracker.py:475: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown: {'/mp-6gp_6h5v'}
+  warnings.warn(

@@ -1,0 +1,23 @@
+==============================================================================
+Filesystem: is anything written during a check-in?
+Test cases: TC-I08
+Run:        2026-09-26 19:22:15
+Machine:    Darwin arm64, Python 3.14.5
+==============================================================================
+
+Scanned the temporary directories for audio and image files.
+Files matching: 1007
+
+No earlier snapshot, so this run is the baseline.
+Now do a voice check-in in the application, then run this again.
+
+--- listening sockets held by the application (TC-I03) ---
+[REDACTED before making this repo public: this was a machine-wide `lsof` listing that
+included other running applications' network connections and this machine's local
+and public IP addresses - personal information unrelated to Mind Fusion. It showed
+no listening socket opened by this app itself; every entry was another program
+(OneDrive, Spotify, Discord, macOS system services) or an established outbound
+connection, none on a port this app uses.]
+
+With the network off, nothing here should point outside this machine
+except the loopback connection to Ollama on port 11434.

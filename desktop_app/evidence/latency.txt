@@ -1,0 +1,28 @@
+==============================================================================
+End-to-end latency on the desktop build
+Test cases: TC-I01, Objective 5
+Run:        2026-09-26 22:51:33
+Machine:    Darwin arm64, Python 3.14.5
+==============================================================================
+
+This times the stages that run outside the interface: mood detection
+and generation through the local Ollama server. It does not include
+Qt's rendering, so treat it as a lower bound on the full path.
+
+mood mapper, 200 runs:  mean 0.020 ms, max 0.051 ms
+
+generation, llama3.2 via http://localhost:11434, 5 runs:
+  run 1:   5.68 s   (603 characters returned)
+  run 2:   5.85 s   (656 characters returned)
+  run 3:   5.18 s   (582 characters returned)
+  run 4:   4.69 s   (490 characters returned)
+  run 5:   5.88 s   (617 characters returned)
+
+  mean   5.46 s
+  median 5.68 s
+  worst  5.88 s
+
+  budget 5.0 s: EXCEEDED on the slowest run
+
+  first run includes loading the model into memory; if it is far
+  slower than the rest, report the warm figure and say so.

@@ -1,0 +1,37 @@
+qt.qpa.fonts: Populating font family aliases took 57 ms. Replace uses of missing font family "Sans Serif" with one that exists to avoid this cost. 
+Mind Fusion Desktop - per-stage latency of a check-in
+date    : 2026-09-26 22:32:18
+machine : Darwin arm64 (14.6.1), Python 3.14.5
+chip    : Apple M1 ; RAM 16 GiB
+models  : chat=llama3.2 via Ollama ollama version is 0.30.7; speech=faster-whisper 'base' int8 CPU
+load    : swap total = 2560.00M  used = 1303.25M  free = 1256.75M  (encrypted) ; disk free 1.1Gi
+runs    : 20 text + 20 voice, history cleared before each
+
+text   1: total   3.70 s  | LLM   3.69 s
+text   2: total   2.85 s  | LLM   2.84 s
+text   3: total   2.21 s  | LLM   2.20 s
+text   4: total   2.25 s  | LLM   2.24 s
+text   5: total   2.09 s  | LLM   2.08 s
+text   6: total   2.58 s  | LLM   2.56 s
+text   7: total   2.58 s  | LLM   2.56 s
+text   8: total   2.25 s  | LLM   2.24 s
+text   9: total   3.89 s  | LLM   3.87 s
+text  10: total   2.93 s  | LLM   2.91 s
+text  11: total   2.65 s  | LLM   2.63 s
+text  12: total   1.86 s  | LLM   1.85 s
+text  13: total   3.14 s  | LLM   3.12 s
+text  14: total   2.32 s  | LLM   2.31 s
+text  15: total   2.03 s  | LLM   2.01 s
+text  16: total   2.18 s  | LLM   2.16 s
+text  17: total   2.08 s  | LLM   2.07 s
+Traceback (most recent call last):
+  File "/Users/somya/mind-fusion-ai/desktop_app/evidence/07_timing.py", line 151, in <module>
+    total, st, offline = run_send(TEXTS[i % len(TEXTS)])
+                         ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/somya/mind-fusion-ai/desktop_app/evidence/07_timing.py", line 142, in run_send
+    pump_until(lambda: chat.send_btn.isEnabled() and chat.send_btn.text() != "Sending…")
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/somya/mind-fusion-ai/desktop_app/evidence/07_timing.py", line 100, in pump_until
+    raise TimeoutError("timed out waiting")
+TimeoutError: timed out waiting
+QThread: Destroyed while thread '' is still running

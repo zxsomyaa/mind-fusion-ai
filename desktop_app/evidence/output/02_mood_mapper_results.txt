@@ -1,0 +1,63 @@
+Mind Fusion Desktop - mood mapper results log
+date: 2026-09-26 17:16:25
+command: python evidence/02_mood_mapper.py
+
+A. Facial-expression category (FER+ model, 8 classes) -> app mood
+   code under test: face_analysis.FER_TO_APP_MOOD
+FER label     expected    actual      result
+------------  ----------  ----------  ------
+neutral       calm        calm        PASS  
+happiness     happy       happy       PASS  
+surprise      hopeful     hopeful     PASS  
+sadness       sad         sad         PASS  
+anger         stressed    stressed    PASS  
+disgust       stressed    stressed    PASS  
+fear          anxious     anxious     PASS  
+contempt      stressed    stressed    PASS  
+   all 8 model classes have a mapping ........ PASS
+   every output is a real app mood ............ PASS
+   app moods reachable from the camera: ['anxious', 'calm', 'happy', 'hopeful', 'sad', 'stressed']
+   NOT reachable from the camera (text/journal only): ['grateful', 'tired']
+
+B. Text check-in -> mood (keyword detector), one sentence per mood
+   code under test: data.detect_mood
+input                                                 expected    actual      conf.   result
+----------------------------------------------------  ----------  ----------  ------  ------
+I'm so happy today, everything went great             happy       happy       0.67    PASS  
+I feel calm and peaceful this evening                 calm        calm        0.67    PASS  
+I'm feeling really down and lonely                    sad         sad         0.67    PASS  
+I'm anxious and worried about tomorrow                anxious     anxious     0.67    PASS  
+I'm overwhelmed, the deadline pressure is too much    stressed    stressed    1.00    PASS  
+I'm so grateful and thankful for my friends           grateful    grateful    0.67    PASS  
+I'm exhausted and completely drained                  tired       tired       0.67    PASS  
+I'm hopeful that things are getting better            hopeful     hopeful     0.67    PASS  
+mujhe dar lagta hain                                  anxious     anxious     0.33    PASS  
+main bahut udaas hoon                                 sad         sad         0.33    PASS  
+aaj main bahut khush hoon                             happy       happy       0.33    PASS  
+मुझे डर लग रहा है                                     anxious     anxious     0.33    PASS  
+It is dark outside                                    calm        calm        0.30    PASS  
+please help me                                        calm        calm        0.30    PASS  
+(empty)                                               calm        calm        0.30    PASS  
+
+C. Crisis-language detector (should be over-cautious: a false alarm is cheap)
+   code under test: data.detect_crisis
+input                                                 expected    actual      result
+----------------------------------------------------  ----------  ----------  ------
+I want to die                                         alert       alert       PASS  
+I'm thinking about suicide                            alert       alert       PASS  
+I keep wanting to hurt myself                         alert       alert       PASS  
+mujhe marna chahta hoon                               alert       alert       PASS  
+मैं आत्महत्या के बारे में सोच रहा हूँ                 alert       alert       PASS  
+I'm so tired today                                    no alert    no alert    PASS  
+mujhe dar lagta hai                                   no alert    no alert    PASS  
+Work is killing me with deadlines                     no alert    no alert    PASS  
+
+RESULT: 33 passed, 0 failed, out of 33 checks
+
+D. Known limitations - shown on purpose, NOT counted as pass/fail above
+   The detector matches keywords; it does not understand grammar or tone.
+input                               detected    why                                                         
+----------------------------------  ----------  ------------------------------------------------------------
+I am not happy at all               happy       negation: 'happy' is found, 'not' is ignored                
+Oh great, another deadline          happy       sarcasm: taken literally                                    
+Ich bin sehr traurig                calm        a language with no keywords: falls back to 'calm'           

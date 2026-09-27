@@ -1,0 +1,26 @@
+==============================================================================
+Mood mapper: expected against actual
+Test cases: TC-F07, TC-E01, TC-E02, TC-E03, TC-E06
+Run:        2026-09-26 19:21:14
+Machine:    Darwin arm64, Python 3.14.5
+==============================================================================
+
+case      expected        input                                         detected     conf  
+------------------------------------------------------------------------------------------------------------
+TC-F07    happy           I feel really happy today                     happy        0.33  ok
+TC-F07    calm            I feel calm and settled                       calm         0.67  ok
+TC-F07    sad             I feel sad and low                            sad          0.33  ok
+TC-F07    anxious         I feel anxious about tomorrow                 anxious      0.33  ok
+TC-F07    stressed        work has been stressful all week              calm         0.30  MISMATCH
+TC-F07    grateful        I feel grateful for today                     grateful     0.33  ok
+TC-F07    tired           I feel tired and worn out                     tired        0.67  ok
+TC-F07    hopeful         I feel hopeful about things                   hopeful      0.33  ok
+TC-E01    not stressed    I am not stressed at all                      stressed     0.33  MISMATCH
+TC-E02    anxious         मुझे बहुत चिंता हो रही है                     anxious      0.33  ok
+TC-E03    stable          I'm completely overwhelmed and totally drain  stressed     0.33  ok
+TC-E06    calm            I went to the shop and bought bread and milk  calm         0.30  ok
+------------------------------------------------------------------------------------------------------------
+10 of 12 as expected
+
+TC-E03 is recorded as stable/unstable rather than correct/incorrect,
+because the case asks whether repeated runs agree, not which mood wins.

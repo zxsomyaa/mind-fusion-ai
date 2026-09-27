@@ -1,0 +1,112 @@
+Mind Fusion Desktop - meal analyser, one photo, repeated
+date    : 2026-09-26 17:17:34
+command : python evidence/03_meal_analyser_twice.py --runs 2
+machine : Apple M1, 16 GB RAM
+ollama  : 0.30.7   model: llava
+model-file sampling parameters: stop                           "[INST]"; stop                           "[/INST]"
+photo   : File:Rice plate Jharkhand.jpg  (CC BY-SA 4.0, Wikimedia Commons)  https://commons.wikimedia.org/wiki/File:Rice_plate_Jharkhand.jpg
+
+prepared exactly as the app does: longest side <= 768px, JPEG q85, base64 length 105,356 chars
+prompt sent (verbatim):
+    | Look at this meal photo and respond with ONLY a raw JSON object - no markdown, no code fences, no explanation. Use exactly this structure:
+    | {"foods":["item1"],"calories_estimate":450,"nutrients":{"protein":22,"carbs":55,"fat":14,"fibre":6},"mood_impact":"one sentence about energy/mood","recommendation":"one practical suggestion","balance_score":7}
+    | Estimate realistically. balance_score is 1-10.
+
+---- run 1: 35.9 s ----
+raw model response (verbatim):
+    | ```json
+    | {
+    |   "foods":["item1", "item2", "item3"],
+    |   "calories_estimate": 650,
+    |   "nutrients": {
+    |     "protein": 40,
+    |     "carbs": 90,
+    |     "fat": 25,
+    |     "fibre": 10
+    |   },
+    |   "mood_impact": "This meal provides a good balance of macronutrients and micronutrients, which can contribute to sustained energy levels and support overall well-being.",
+    |   "recommendation": "Consider adding some fresh fruits or vegetables for added nutritional value and variety in color and texture.",
+    |   "balance_score": 8.5
+    | }
+    | ```
+parsed by the app:
+    {
+      "foods": [
+        "item1",
+        "item2",
+        "item3"
+      ],
+      "calories_estimate": 650,
+      "nutrients": {
+        "protein": 40.0,
+        "carbs": 90.0,
+        "fat": 25.0,
+        "fibre": 10.0
+      },
+      "balance_score": 8,
+      "mood_impact": "This meal provides a good balance of macronutrients and micronutrients, which can contribute to sustained energy levels and support overall well-being.",
+      "recommendation": "Consider adding some fresh fruits or vegetables for added nutritional value and variety in color and texture."
+    }
+
+---- run 2: 15.2 s ----
+raw model response (verbatim):
+    | ```json
+    | {
+    |   "foods": ["item1"],
+    |   "calories_estimate": 450,
+    |   "nutrients": {
+    |     "protein": 22,
+    |     "carbs": 55,
+    |     "fat": 14,
+    |     "fibre": 6
+    |   },
+    |   "mood_impact": "This meal provides a good balance of protein and carbohydrates for energy, while the presence of fibre suggests it might aid in digestion. The inclusion of a fried item could contribute to higher fat content, which may not be ideal for certain health conditions.",
+    |   "recommendation": "Adding more vegetables or a portion of fruit would increase the fiber and nutrient profile of this meal, promoting better overall health.",
+    |   "balance_score": 7
+    | }
+    | ```
+parsed by the app:
+    {
+      "foods": [
+        "item1"
+      ],
+      "calories_estimate": 450,
+      "nutrients": {
+        "protein": 22.0,
+        "carbs": 55.0,
+        "fat": 14.0,
+        "fibre": 6.0
+      },
+      "balance_score": 7,
+      "mood_impact": "This meal provides a good balance of protein and carbohydrates for energy, while the presence of fibre suggests it might aid in digestion. The inclusion of a fried item could contribute to higher fat content, which may not be ideal for certain health conditions.",
+      "recommendation": "Adding more vegetables or a portion of fruit would increase the fiber and nutrient profile of this meal, promoting better overall health."
+    }
+
+====================================================================================================
+SIDE BY SIDE (parsed fields), runs 1 and 2
+====================================================================================================
+field               run 1                                 run 2                                 same?
+----------------------------------------------------------------------------------------------------
+foods               item1, item2, item3                   item1                                 NO
+calories_estimate   650                                   450                                   NO
+balance_score       8                                     7                                     NO
+nutrients.protein   40.0                                  22.0                                  NO
+nutrients.carbs     90.0                                  55.0                                  NO
+nutrients.fat       25.0                                  14.0                                  NO
+nutrients.fibre     10.0                                  6.0                                   NO
+mood_impact         This meal provides a good balance of  This meal provides a good balance of  NO
+                    macronutrients and micronutrients,    protein and carbohydrates for         
+                    which can contribute to sustained     energy, while the presence of fibre   
+                    energy levels and support overall     suggests it might aid in digestion.   
+                    well-being.                           The inclusion of a fried item could   
+                                                          contribute to higher fat content,     
+                                                          which may not be ideal for certain    
+                                                          health conditions.                    
+recommendation      Consider adding some fresh fruits or  Adding more vegetables or a portion   NO
+                    vegetables for added nutritional      of fruit would increase the fiber     
+                    value and variety in color and        and nutrient profile of this meal,    
+                    texture.                              promoting better overall health.      
+----------------------------------------------------------------------------------------------------
+raw response text identical between run 1 and run 2 : NO
+parsed fields that differ                            : 9 of 9
+response times                                       : 35.9 s, 15.2 s

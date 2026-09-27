@@ -1,0 +1,6 @@
+process 7973 opened evidence.db
+session table says signed-in user id: 1
+start-up went straight to the main app (no sign-in / onboarding screen): True
+  signed-in user : Evidence User <evidence@example.com>
+  profile loaded : country=IN language=hi age=25-34 conditions=['anxiety', 'Migraine aura'] habits=['exercise', 'meditation'] goals=['reduce_stress', 'better_sleep']
+  journal tab lists 1 saved entry without being asked to reload

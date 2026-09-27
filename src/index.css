@@ -1,0 +1,14 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', system-ui, sans-serif; background: #FAF8F4; color: #3D2C1E; -webkit-font-smoothing: antialiased; }
+#root { width: 100%; min-height: 100vh; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #F2EBE0; }
+::-webkit-scrollbar-thumb { background: #C4956A; border-radius: 3px; }
+button { cursor: pointer; border: none; outline: none; font-family: inherit; }
+input, textarea, select { font-family: inherit; outline: none; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.06); } }
+@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes breathe { 0%,100% { transform:scale(1); opacity:.7; } 50% { transform:scale(1.35); opacity:1; } }
+@keyframes ripple { 0% { transform:scale(0.8); opacity:1; } 100% { transform:scale(2.2); opacity:0; } }
+.animate-in { animation: fadeIn .35s ease both; }

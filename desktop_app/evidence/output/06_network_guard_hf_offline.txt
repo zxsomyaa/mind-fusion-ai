@@ -1,0 +1,38 @@
+Mind Fusion Desktop - network evidence (socket-level guard)
+date   : 2026-09-26 19:45:07
+command: python evidence/06_network_guard.py   (HF_HUB_OFFLINE=1)
+guard  : every connect()/getaddrinfo() logged; anything not 127.0.0.0/8 or ::1 is refused
+
+A. text check-in through the app's own functions
+   detect_mood -> anxious ; recommendations -> 4 ; (pure Python, no I/O)
+   chat_ai (llama3.2 via http://localhost:11434) returned 119 characters in 3.0 s
+   socket events: 2   local: 2   EXTERNAL attempts (all blocked): 0
+   local destinations : 127.0.0.1:11434, localhost
+
+B. voice check-in: faster-whisper 'base' transcribing a spoken clip
+   loaded model + transcribed in 1.3 s -> 'I feel a bit anxious about my exam tomorrow.'
+   socket events: 0   local: 0   EXTERNAL attempts (all blocked): 0
+
+C. meal analysis: ai_client.vision_ai (llava) on the sample photo
+   vision_ai returned 19 characters in 9.8 s
+   socket events: 2   local: 2   EXTERNAL attempts (all blocked): 0
+   local destinations : 127.0.0.1:11434, localhost
+
+D. face expression: YuNet detector + FER+ classifier on a photo (ONNX, local files)
+   detector + classifier constructed OK from the local .onnx files in desktop_app/models/
+   detector ran on the meal photo (contains no face): 0 face(s)
+   socket events: 0   local: 0   EXTERNAL attempts (all blocked): 0
+
+E. the operating system's view of this process (lsof) at the end of the run
+   $ lsof -nP -a -p 8254 -i
+   (no open internet sockets held by this process at this moment)
+
+ALL SOCKET EVENTS (label, kind, destination, allowed):
+   A  dns-lookup localhost                        local
+   A  connect    127.0.0.1:11434                  local
+   C  dns-lookup localhost                        local
+   C  connect    127.0.0.1:11434                  local
+
+RESULT: PASS - the app code attempted no non-local connection
+/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/multiprocessing/resource_tracker.py:475: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown: {'/mp-kt05s0ky'}
+  warnings.warn(

@@ -1,0 +1,56 @@
+# models_extra - supplementary to evidence/models.txt (2026-09-26 22:11:34)
+
+$ ollama show <tag>   (architecture / parameters / quantization)
+--- llama3.2:latest
+  Model
+    architecture        llama     
+    parameters          3.2B      
+    context length      131072    
+    embedding length    3072      
+    quantization        Q4_K_M    
+
+  Capabilities
+    completion    
+    tools         
+
+  Parameters
+--- llava:latest
+  Model
+    architecture        llama    
+    parameters          7B       
+    context length      32768    
+    embedding length    4096     
+    quantization        Q4_0     
+
+  Capabilities
+    completion    
+    vision        
+
+  Projector
+--- mistral:latest
+  Model
+    architecture        llama     
+    parameters          7.2B      
+    context length      32768     
+    embedding length    4096      
+    quantization        Q4_K_M    
+
+  Capabilities
+    completion    
+    tools         
+
+  Parameters
+
+$ du -sh ~/.ollama/models/blobs (all pulled layers)
+ 10G	/Users/somya/.ollama/models/blobs
+
+$ ls -la desktop_app/models   (ONNX files shipped with the app)
+total 68896
+drwxr-xr-x@  4 somya  staff       128 Aug 18 16:21 .
+drwxr-xr-x@ 27 somya  staff       864 Sep 26 19:21 ..
+-rw-r--r--@  1 somya  staff  35040571 Aug 18 16:05 emotion-ferplus-8.onnx
+-rw-r--r--@  1 somya  staff    232589 Aug 18 16:21 face_detection_yunet_2023mar.onnx
+
+$ du -sh faster-whisper base cache
+141M	/Users/somya/.cache/huggingface/hub/models--Systran--faster-whisper-base
+faster-whisper 1.2.1

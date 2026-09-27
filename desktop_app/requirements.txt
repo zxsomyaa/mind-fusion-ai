@@ -1,0 +1,13 @@
+PySide6>=6.7
+requests>=2.31
+
+# Speech-to-text (local Whisper, downloads its model weights on first use)
+faster-whisper>=1.0
+sounddevice>=0.4
+numpy>=1.26
+
+# Camera-based face/expression analysis (Haar cascade + a small local ONNX
+# emotion model - no TensorFlow needed, which matters because TensorFlow has
+# no build for Python 3.14 yet)
+opencv-python-headless>=4.9
+onnxruntime>=1.17

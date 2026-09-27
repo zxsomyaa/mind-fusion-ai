@@ -1,0 +1,26 @@
+==============================================================================
+Installed models and versions
+Test cases: confirms Table 5
+Run:        2026-09-26 19:21:21
+Machine:    Darwin arm64, Python 3.14.5
+==============================================================================
+
+$ ollama --version
+ollama version is 0.30.7
+
+$ ollama list
+NAME               ID              SIZE      MODIFIED     
+llava:latest       8dd30f6b0cb1    4.7 GB    3 months ago    
+mistral:latest     6577803aa9a0    4.4 GB    3 months ago    
+llama3.2:latest    a80c4f17acd5    2.0 GB    3 months ago
+
+$ ollama ps
+NAME    ID    SIZE    PROCESSOR    CONTEXT    UNTIL
+
+$ python3
+opencv 5.0.0
+onnxruntime 1.29.0
+PySide6 6.11.2
+objc[7962]: Class AVFFrameReceiver is implemented in both /Users/somya/mind-fusion-ai/desktop_app/venv/lib/python3.14/site-packages/cv2/.dylibs/libavdevice.61.3.100.dylib (0x100c043a8) and /Users/somya/mind-fusion-ai/desktop_app/venv/lib/python3.14/site-packages/av/.dylibs/libavdevice.62.3.102.dylib (0x10985c3a8). One of the two will be used. Which one is undefined.
+objc[7962]: Class AVFAudioReceiver is implemented in both /Users/somya/mind-fusion-ai/desktop_app/venv/lib/python3.14/site-packages/cv2/.dylibs/libavdevice.61.3.100.dylib (0x100c043f8) and /Users/somya/mind-fusion-ai/desktop_app/venv/lib/python3.14/site-packages/av/.dylibs/libavdevice.62.3.102.dylib (0x10985c3f8). One of the two will be used. Which one is undefined.
+

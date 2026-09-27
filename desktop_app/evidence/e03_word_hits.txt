@@ -1,0 +1,8 @@
+input: "I'm completely overwhelmed and totally drained"
+  words matched per mood: {'stressed': ['overwhelmed'], 'tired': ['drained']}
+  detect_mood -> mood=stressed confidence=0.33  (data.py:158 max() breaks ties by dict order; no ambiguity is reported)
+
+input: 'I feel happy and sad at the same time'
+  words matched per mood: {'happy': ['happy'], 'sad': ['sad']}
+  detect_mood -> mood=happy confidence=0.33  (data.py:158 max() breaks ties by dict order; no ambiguity is reported)
+

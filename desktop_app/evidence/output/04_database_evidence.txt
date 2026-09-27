@@ -1,0 +1,62 @@
+# Database evidence - 2026-09-26 17:21:39
+# scratch database: evidence/output/evidence.db   (sqlite3 3.43.2)
+
+############ STEP 1: process A drives the real onboarding wizard and Journal tab
+$ python evidence/04_database_driver.py --phase write --db evidence/output/evidence.db
+onboarding finished; login_completed emitted for user id [1]
+journal entry saved via JournalTab._save_entry()
+
+############ STEP 2: query the database directly with the sqlite3 command-line tool
+
+$ sqlite3 -header -column evidence/output/evidence.db "SELECT * FROM users;"
+id  name           email               
+--  -------------  --------------------
+1   Evidence User  evidence@example.com
+
+$ sqlite3 -header -column evidence/output/evidence.db "SELECT * FROM profiles;"     -- the six onboarding answers
+user_id  country  language  age_group  conditions                    habits                      goals                            
+-------  -------  --------  ---------  ----------------------------  --------------------------  ---------------------------------
+1        IN       hi        25-34      ["anxiety", "Migraine aura"]  ["exercise", "meditation"]  ["reduce_stress", "better_sleep"]
+
+  (table: profiles; columns: country, language, age_group, conditions, habits, goals = six fields;
+   list fields are stored as JSON text)
+$ sqlite3 evidence/output/evidence.db "SELECT COUNT(*) FROM pragma_table_info('profiles') WHERE name NOT IN ('user_id');"
+6
+
+$ sqlite3 -header -column evidence/output/evidence.db "SELECT id, user_id, prompt, text, mood, datetime(timestamp/1000,'unixepoch','localtime') AS saved_at FROM journal_entries;"
+id  user_id  prompt                                            text                                                                                mood  saved_at           
+--  -------  ------------------------------------------------  ----------------------------------------------------------------------------------  ----  -------------------
+1   1        What's been quietly bringing you comfort lately?  Today was stressful at work, but a long walk in the evening helped me feel calmer.  calm  2026-09-26 17:21:40
+
+$ sqlite3 -header -column evidence/output/evidence.db "SELECT * FROM session;"      -- who is signed in
+id  user_id
+--  -------
+1   1      
+
+$ sqlite3 -header -column evidence/output/evidence.db "SELECT id, mood, datetime(timestamp/1000,'unixepoch','localtime') FROM mood_history;"   -- journal entry also logged a mood
+id  mood  at                 
+--  ----  -------------------
+1   calm  2026-09-26 17:21:40
+
+############ STEP 3: RESTART - a brand-new operating-system process opens the same file
+$ python evidence/04_database_driver.py --phase restart --db evidence/output/evidence.db
+process 6715 opened evidence.db
+session table says signed-in user id: 1
+start-up went straight to the main app (no sign-in / onboarding screen): True
+  signed-in user : Evidence User <evidence@example.com>
+  profile loaded : country=IN language=hi age=25-34 conditions=['anxiety', 'Migraine aura'] habits=['exercise', 'meditation'] goals=['reduce_stress', 'better_sleep']
+  journal tab lists 1 saved entry without being asked to reload
+
+############ STEP 4: the same queries after the restart, and a diff of the whole saved data
+$ sqlite3 -header -column evidence/output/evidence.db "SELECT * FROM profiles;"
+user_id  country  language  age_group  conditions                    habits                      goals                            
+-------  -------  --------  ---------  ----------------------------  --------------------------  ---------------------------------
+1        IN       hi        25-34      ["anxiety", "Migraine aura"]  ["exercise", "meditation"]  ["reduce_stress", "better_sleep"]
+
+$ sqlite3 -header -column evidence/output/evidence.db "SELECT id, prompt, text, mood FROM journal_entries;"
+id  prompt                                            text                                                                                mood
+--  ------------------------------------------------  ----------------------------------------------------------------------------------  ----
+1   What's been quietly bringing you comfort lately?  Today was stressful at work, but a long walk in the evening helped me feel calmer.  calm
+
+$ diff <(dump before restart) <(dump after restart)
+(no differences - every saved row is byte-for-byte identical after the restart)

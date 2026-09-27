@@ -1,0 +1,26 @@
+qt.qpa.fonts: Populating font family aliases took 55 ms. Replace uses of missing font family "Sans Serif" with one that exists to avoid this cost. 
+Mind Fusion Desktop - per-stage latency of a check-in
+date    : 2026-09-26 22:11:23
+machine : Darwin arm64 (14.6.1), Python 3.14.5
+chip    : Apple M1 ; RAM 16 GiB
+models  : chat=llama3.2 via Ollama ollama version is 0.30.7; speech=faster-whisper 'base' int8 CPU
+load    : swap total = 2560.00M  used = 1327.25M  free = 1232.75M  (encrypted) ; disk free 1.0Gi
+runs    : 20 text + 20 voice, history cleared before each
+
+text   1: total   2.80 s  | LLM   2.79 s
+text   2: total   2.08 s  | LLM   2.07 s
+text   3: total   3.44 s  | LLM   3.42 s
+text   4: total   1.62 s  | LLM   1.61 s
+text   5: total   2.53 s  | LLM   2.51 s
+text   6: total   2.31 s  | LLM   2.29 s
+Traceback (most recent call last):
+  File "/Users/somya/mind-fusion-ai/desktop_app/evidence/07_timing.py", line 151, in <module>
+    total, st, offline = run_send(TEXTS[i % len(TEXTS)])
+                         ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/somya/mind-fusion-ai/desktop_app/evidence/07_timing.py", line 142, in run_send
+    pump_until(lambda: chat.send_btn.isEnabled() and chat.send_btn.text() != "Sending…")
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/somya/mind-fusion-ai/desktop_app/evidence/07_timing.py", line 100, in pump_until
+    raise TimeoutError("timed out waiting")
+TimeoutError: timed out waiting
+QThread: Destroyed while thread '' is still running

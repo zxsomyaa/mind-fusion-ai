@@ -1,0 +1,13 @@
+# Is the SQLite file encrypted at rest? (2026-09-26 22:52:40) - checked on the scratch test-account DB, same code path (db.py:21 sqlite3.connect(path), no key)
+$ head -c 16 evidence/output/evidence.db | xxd | head -1
+00000000: 5351 4c69 7465 2066 6f72 6d61 7420 3300  SQLite format 3.
+$ file evidence/output/evidence.db
+evidence/output/evidence.db: SQLite 3.x database, last written using SQLite version 3053002, file counter 26, database pages 22, cookie 0x14, schema 4, UTF-8, version-valid-for 26
+$ strings evidence/output/evidence.db | grep -i "Today was stressful"
+What's been quietly bringing you comfort lately?Today was stressful at work, but a long walk in the evening helped me feel calmer.calm
+$ strings evidence/output/evidence.db | grep -c "evidence@example.com"
+2
+$ grep -rniE "sqlcipher|pragma key|encrypt" *.py ui (excluding venv/evidence/tests)
+(exit 1; 1 = no matches)
+$ fdesetup status   (macOS full-disk encryption, separate from the app)
+FileVault is On.

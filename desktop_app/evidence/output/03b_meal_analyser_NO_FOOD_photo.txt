@@ -1,0 +1,92 @@
+Mind Fusion Desktop - meal analyser, one photo, repeated
+date    : 2026-09-26 20:09:22
+command : python evidence/03_meal_analyser_twice.py --runs 2 --photo nofood_photo.jpg
+machine : Apple M1, 16 GB RAM
+ollama  : 0.30.7   model: llava
+model-file sampling parameters: stop                           "[INST]"; stop                           "[/INST]"
+photo   : Laptop on a neat desk (Unsplash).jpg  (CC0 (public domain dedication), Wikimedia Commons)  https://commons.wikimedia.org/wiki/File:Laptop_on_a_neat_desk_(Unsplash).jpg
+
+prepared exactly as the app does: longest side <= 768px, JPEG q85, base64 length 54,908 chars
+prompt sent (verbatim):
+    | Look at this meal photo and respond with ONLY a raw JSON object - no markdown, no code fences, no explanation. Use exactly this structure:
+    | {"foods":["item1"],"calories_estimate":450,"nutrients":{"protein":22,"carbs":55,"fat":14,"fibre":6},"mood_impact":"one sentence about energy/mood","recommendation":"one practical suggestion","balance_score":7}
+    | Estimate realistically. balance_score is 1-10.
+
+---- run 1: 15.9 s ----
+raw model response (verbatim):
+    | {"foods":["item1"],"calories_estimate":450,"nutrients":{"protein":22,"carbs":55,"fat":14,"fibre":6},"mood_impact":"The meal could provide a moderate energy boost to help concentrate and focus on tasks for several hours.","recommendation":"Consider adding a side of fresh fruit or vegetables for additional vitamins and fiber, which can help maintain energy levels throughout the workday.","balance_score":7}
+parsed by the app:
+    {
+      "foods": [
+        "item1"
+      ],
+      "calories_estimate": 450,
+      "nutrients": {
+        "protein": 22.0,
+        "carbs": 55.0,
+        "fat": 14.0,
+        "fibre": 6.0
+      },
+      "balance_score": 7,
+      "mood_impact": "The meal could provide a moderate energy boost to help concentrate and focus on tasks for several hours.",
+      "recommendation": "Consider adding a side of fresh fruit or vegetables for additional vitamins and fiber, which can help maintain energy levels throughout the workday."
+    }
+
+---- run 2: 11.3 s ----
+raw model response (verbatim):
+    | ```json
+    | {
+    |   "foods": ["item1"],
+    |   "calories_estimate": 450,
+    |   "nutrients": {
+    |     "protein": 22,
+    |     "carbs": 55,
+    |     "fat": 14,
+    |     "fiber": 6
+    |   },
+    |   "mood_impact": "Provides a quick energy boost but may lead to an energy crash later.",
+    |   "recommendation": "Consider adding a source of protein and fiber for better satiety and longer-lasting energy.",
+    |   "balance_score": 7
+    | }
+    | ```
+parsed by the app:
+    {
+      "foods": [
+        "item1"
+      ],
+      "calories_estimate": 450,
+      "nutrients": {
+        "protein": 22.0,
+        "carbs": 55.0,
+        "fat": 14.0,
+        "fibre": 6.0
+      },
+      "balance_score": 7,
+      "mood_impact": "Provides a quick energy boost but may lead to an energy crash later.",
+      "recommendation": "Consider adding a source of protein and fiber for better satiety and longer-lasting energy."
+    }
+
+====================================================================================================
+SIDE BY SIDE (parsed fields), runs 1 and 2
+====================================================================================================
+field               run 1                                 run 2                                 same?
+----------------------------------------------------------------------------------------------------
+foods               item1                                 item1                                 yes
+calories_estimate   450                                   450                                   yes
+balance_score       7                                     7                                     yes
+nutrients.protein   22.0                                  22.0                                  yes
+nutrients.carbs     55.0                                  55.0                                  yes
+nutrients.fat       14.0                                  14.0                                  yes
+nutrients.fibre     6.0                                   6.0                                   yes
+mood_impact         The meal could provide a moderate     Provides a quick energy boost but     NO
+                    energy boost to help concentrate and  may lead to an energy crash later.    
+                    focus on tasks for several hours.                                           
+recommendation      Consider adding a side of fresh       Consider adding a source of protein   NO
+                    fruit or vegetables for additional    and fiber for better satiety and      
+                    vitamins and fiber, which can help    longer-lasting energy.                
+                    maintain energy levels throughout                                           
+                    the workday.                                                                
+----------------------------------------------------------------------------------------------------
+raw response text identical between run 1 and run 2 : NO
+parsed fields that differ                            : 2 of 9
+response times                                       : 15.9 s, 11.3 s

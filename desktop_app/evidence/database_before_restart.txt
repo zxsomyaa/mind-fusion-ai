@@ -1,0 +1,134 @@
+==============================================================================
+SQLite: what the application actually stored
+Test cases: TC-F01, TC-F11, TC-I07
+Run:        2026-09-26 19:21:27
+Machine:    Darwin arm64, Python 3.14.5
+==============================================================================
+
+NOTE: read this file before pasting it into the report and remove
+anything personal. Use the test profile, not your own.
+
+File:  /Users/somya/mind-fusion-ai/desktop_app/evidence/output/evidence.db
+Size:  88.0 KB
+
+Tables: affirm_favorites, ai_config, app_settings, chat_messages, exercise_sessions, habit_log, journal_entries, mood_history, nutrition_history, profiles, session, sleep_log, sqlite_sequence, users
+
+--- chat_messages ---------------------------------------------------------
+CREATE TABLE chat_messages (
+                id        INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id   INTEGER REFERENCES users(id),
+                role      TEXT NOT NULL,
+                content   TEXT NOT NULL,
+                mood      TEXT,
+                timestamp INTEGER NOT NULL
+            )
+rows: 0
+
+--- exercise_sessions -----------------------------------------------------
+CREATE TABLE exercise_sessions (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id       INTEGER REFERENCES users(id),
+                exercise_id   TEXT NOT NULL,
+                exercise_name TEXT NOT NULL,
+                timestamp     INTEGER NOT NULL
+            , duration_min INTEGER, source TEXT)
+rows: 0
+
+--- habit_log -------------------------------------------------------------
+CREATE TABLE habit_log (
+                user_id  INTEGER REFERENCES users(id),
+                habit_id TEXT NOT NULL,
+                day      TEXT NOT NULL,          -- ISO date, e.g. 2026-09-21
+                PRIMARY KEY (user_id, habit_id, day)
+            )
+rows: 0
+
+--- journal_entries -------------------------------------------------------
+CREATE TABLE journal_entries (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id    INTEGER REFERENCES users(id),
+                prompt     TEXT,
+                text       TEXT NOT NULL,
+                mood       TEXT,
+                timestamp  INTEGER NOT NULL
+            )
+rows: 1
+most recent row:
+    id                 1
+    user_id            1
+    prompt             What's been quietly bringing you comfort lately?
+    text               Today was stressful at work, but a long walk in the evening helped me feel calmer.
+    mood               calm
+    timestamp          1790414500265
+
+--- mood_history ----------------------------------------------------------
+CREATE TABLE mood_history (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id    INTEGER REFERENCES users(id),
+                mood       TEXT NOT NULL,
+                timestamp  INTEGER NOT NULL
+            )
+rows: 1
+most recent row:
+    id                 1
+    user_id            1
+    mood               calm
+    timestamp          1790414500266
+
+--- nutrition_history -----------------------------------------------------
+CREATE TABLE nutrition_history (
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id          INTEGER REFERENCES users(id),
+                foods            TEXT,
+                calories_estimate INTEGER,
+                balance_score    INTEGER,
+                mood_impact      TEXT,
+                timestamp        INTEGER NOT NULL
+            , protein REAL, carbs REAL, fat REAL, fibre REAL, recommendation TEXT)
+rows: 0
+
+--- profiles --------------------------------------------------------------
+CREATE TABLE profiles (
+                user_id     INTEGER PRIMARY KEY REFERENCES users(id),
+                country     TEXT,
+                language    TEXT,
+                age_group   TEXT,
+                conditions  TEXT DEFAULT '[]',
+                habits      TEXT DEFAULT '[]',
+                goals       TEXT DEFAULT '[]'
+            )
+rows: 1
+most recent row:
+    user_id            1
+    country            IN
+    language           hi
+    age_group          25-34
+    conditions         ["anxiety", "Migraine aura"]
+    habits             ["exercise", "meditation"]
+    goals              ["reduce_stress", "better_sleep"]
+
+--- sleep_log -------------------------------------------------------------
+CREATE TABLE sleep_log (
+                user_id INTEGER REFERENCES users(id),
+                day     TEXT NOT NULL,           -- the date the sleep is logged on
+                hours   REAL NOT NULL,
+                quality INTEGER,                 -- 1 (poor) .. 5 (great)
+                PRIMARY KEY (user_id, day)
+            )
+rows: 0
+
+--- users -----------------------------------------------------------------
+CREATE TABLE users (
+                id      INTEGER PRIMARY KEY AUTOINCREMENT,
+                name    TEXT NOT NULL,
+                email   TEXT NOT NULL UNIQUE
+            )
+rows: 1
+most recent row:
+    id                 1
+    name               Evidence User
+    email              evidence@example.com
+
+TC-F01 passes if the profile row holds all six onboarding fields.
+TC-F11 and TC-I07 pass if the journal row survived a restart —
+quit the application, reopen it, and run this command again.

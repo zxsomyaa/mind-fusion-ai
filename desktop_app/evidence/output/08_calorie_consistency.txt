@@ -1,0 +1,8 @@
+kcal reported vs kcal implied by the reported macros (4 kcal/g protein & carbs, 9 kcal/g fat)
+file                                  run   reported  implied    diff  protein/carbs/fat g 
+03_meal_analyser_twice.txt            1          650      745     -95  40/90/25
+03_meal_analyser_twice.txt            2          450      434     +16  22/55/14
+03b_meal_analyser_NO_FOOD_photo.txt   1          450      434     +16  22/55/14
+03b_meal_analyser_NO_FOOD_photo.txt   2          450      434     +16  22/55/14
+
+The app displays calories_estimate as given (nutrition_logic.parse_analysis only clamps ranges); it does not compare it with the macros.
