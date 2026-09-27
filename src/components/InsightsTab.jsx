@@ -201,7 +201,7 @@ export default function InsightsTab({ moodHistory, userProfile }) {
   const ghostBtn = { padding: '7px 16px', borderRadius: 20, border: `1.5px solid ${C.border}`, background: 'none', color: C.text, fontSize: 13, cursor: 'pointer', fontFamily: FONT.sans };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ fontFamily: FONT.serif, color: C.primary, fontSize: 24, fontWeight: 800, marginBottom: 4 }}>Insights</h1>

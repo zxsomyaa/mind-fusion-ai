@@ -165,7 +165,7 @@ export default function NutritionTab({ aiConfig, connected, onOpenSettings }) {
   const primaryBtn = { padding: '11px 20px', borderRadius: 12, border: 'none', background: C.primary, color: '#FFF', cursor: 'pointer', fontFamily: FONT.sans, fontSize: 14, fontWeight: 600 };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div>
         <h1 style={{ fontFamily: FONT.serif, color: C.primary, fontSize: 24, fontWeight: 800, marginBottom: 6 }}>Meal analysis</h1>
         <Muted size={13}>Snap or drop a photo of your meal for an instant nutrition estimate and a note on how it might affect your energy. Analysed on your computer.</Muted>

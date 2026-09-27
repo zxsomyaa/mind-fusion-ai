@@ -41,6 +41,12 @@ export function applyTheme(name) {
   Object.assign(C, name === 'dark' ? DARK_COLORS : LIGHT_COLORS);
 }
 
+/** '#8B5E3C' -> '139, 94, 60', for CSS rgba(var(--x), alpha) custom properties. */
+export function hexToRgb(hex) {
+  const m = hex.replace('#', '').match(/.{1,2}/g) || [];
+  return m.map(h => parseInt(h, 16)).join(', ');
+}
+
 export const FONT = {
   serif: "'Playfair Display', Georgia, serif",
   sans: "'DM Sans', system-ui, sans-serif",

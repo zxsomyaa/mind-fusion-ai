@@ -6,6 +6,19 @@ body { font-family: 'DM Sans', system-ui, sans-serif; background: #FAF8F4; color
 ::-webkit-scrollbar-thumb { background: #C4956A; border-radius: 3px; }
 button { cursor: pointer; border: none; outline: none; font-family: inherit; }
 input, textarea, select { font-family: inherit; outline: none; }
+
+/* Universal, subtle interactive feedback - every button gets a hover/press
+   response and every text field a focus ring, without each component having
+   to wire up its own handlers. Colours read the current theme (kept in sync
+   with the shared `C` palette by App.jsx whenever the theme changes). */
+:root { --mf-primary-rgb: 139, 94, 60; }
+button:not(:disabled) { transition: opacity 0.15s ease, transform 0.05s ease, box-shadow 0.15s ease; }
+button:not(:disabled):hover { opacity: 0.88; }
+button:not(:disabled):active { transform: scale(0.97); }
+input:not(:disabled), textarea:not(:disabled), select:not(:disabled) { transition: box-shadow 0.15s ease, border-color 0.15s ease; }
+input:not(:disabled):focus, textarea:not(:disabled):focus, select:not(:disabled):focus {
+  box-shadow: 0 0 0 3px rgba(var(--mf-primary-rgb), 0.18);
+}
 @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 @keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.06); } }
 @keyframes spin { to { transform:rotate(360deg); } }

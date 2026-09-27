@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { C, FONT, applyTheme } from './data';
+import { C, FONT, applyTheme, hexToRgb } from './data';
 import { DEFAULT_CONFIG, PRESETS, checkConnection } from './ai';
 import Onboarding from './components/Onboarding';
 import HomeTab from './components/HomeTab';
@@ -57,6 +57,7 @@ export default function App() {
   const [moodHistory, setMoodHistory] = useState(() => load('mf_mood_history', []));
   const [showSettings, setShowSettings] = useState(false);
   const [theme,       setTheme]       = useState(() => load('mf_theme', 'light'));
+  const [hoveredTab,  setHoveredTab]  = useState(null);
   // null = unknown, true = connected, false = disconnected
   const [connected,   setConnected]   = useState(null);
 
@@ -78,6 +79,7 @@ export default function App() {
     applyTheme(theme);
     document.body.style.background = C.bg;
     document.body.style.color = C.text;
+    document.documentElement.style.setProperty('--mf-primary-rgb', hexToRgb(C.primary));
     localStorage.setItem('mf_theme', JSON.stringify(theme));
   }, [theme]);
 
@@ -120,9 +122,9 @@ export default function App() {
                   : connected === false ? { color: '#E07A5F', label: 'Local AI not connected' }
                   : { color: '#D4A017', label: 'Checking…' };
 
-  const navBtnStyle = (active) => ({
+  const navBtnStyle = (active, hovered) => ({
     display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-    background: active ? C.primaryPale : 'none', border: 'none', borderRadius: 10,
+    background: active ? C.primaryPale : hovered ? C.bg : 'none', border: 'none', borderRadius: 10,
     padding: '9px 12px', textAlign: 'left', cursor: 'pointer',
     color: active ? C.primary : C.text, fontWeight: active ? 600 : 400,
     fontSize: 14, fontFamily: FONT.sans,
@@ -147,7 +149,9 @@ export default function App() {
 
         <nav style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {TABS.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={navBtnStyle(activeTab === tab.id)}>
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              onMouseEnter={() => setHoveredTab(tab.id)} onMouseLeave={() => setHoveredTab(null)}
+              style={navBtnStyle(activeTab === tab.id, hoveredTab === tab.id)}>
               <span style={{ fontSize: 16 }}>{tab.emoji}</span>{tab.label}
             </button>
           ))}

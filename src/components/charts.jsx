@@ -145,7 +145,7 @@ export function LineChart({ points, height = 170 }) {
       </div>
     );
   }
-  const LEFT = 46, width = 600;
+  const LEFT = 54, width = 600;
   const plotW = width - LEFT - 8, plotH = height - 22;
   const yOf = (v) => plotH / 2 - (v / 1) * (plotH / 2);
   const xOf = (i) => LEFT + (points.length === 1 ? plotW / 2 : (plotW * i) / (points.length - 1));
