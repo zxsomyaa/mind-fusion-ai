@@ -12,3 +12,11 @@ input, textarea, select { font-family: inherit; outline: none; }
 @keyframes breathe { 0%,100% { transform:scale(1); opacity:.7; } 50% { transform:scale(1.35); opacity:1; } }
 @keyframes ripple { 0% { transform:scale(0.8); opacity:1; } 100% { transform:scale(2.2); opacity:0; } }
 .animate-in { animation: fadeIn .35s ease both; }
+
+/* Onboarding: split hero / form layout, matching the desktop app's design */
+.mf-onboarding { min-height: 100vh; width: 100%; display: flex; }
+.mf-onboarding-hero { display: flex; }
+.mf-onboarding-form { flex: 1; display: flex; align-items: center; justify-content: center; }
+@media (max-width: 899px) {
+  .mf-onboarding-hero { display: none; }
+}
