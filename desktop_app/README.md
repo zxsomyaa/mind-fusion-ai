@@ -1,3 +1,5 @@
+[← Back to project overview](../README.md)
+
 # Mind Fusion Desktop
 
 A native Python desktop port of the Mind Fusion web app - 9 tabs: Today
@@ -104,6 +106,12 @@ layer, the Nutrition and Insights pages, every chart, and the main screens. They
 the AI server and camera, so they never touch your data, need no camera and
 download nothing large. (The face tests fetch one small public sample
 portrait the first time and are skipped if you're offline.)
+
+Beyond this unit suite, [`evidence/`](evidence/) holds independently
+re-runnable scripts and their raw, unedited output for the project's formal
+test cases (persistence, filesystem/network behaviour, per-stage latency,
+model versions, and known failure modes). Start at
+**[`evidence/SUMMARY.md`](evidence/SUMMARY.md)** for the full results table.
 
 ## Notes on language and photos
 
