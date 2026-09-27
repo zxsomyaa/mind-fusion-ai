@@ -6,7 +6,7 @@
 
 *Mood tracking · Journaling · Nutrition analysis · Guided exercises · Insights — with every AI feature running on-device, never in the cloud.*
 
-[Overview](#overview) · [Live Demo](#live-demo) · [Screenshots](#screenshots) · [Features](#features) · [Tech Stack](#tech-stack) · [Getting Started](#getting-started) · [Testing & Evidence](#testing--evidence)
+[Overview](#overview) · [Getting Started](#getting-started) · [Live Demo](#live-demo) · [Screenshots](#screenshots) · [Features](#features) · [Tech Stack](#tech-stack) · [Testing & Evidence](#testing--evidence)
 
 </div>
 
@@ -21,29 +21,63 @@
 
 The defining constraint of this project is **data sovereignty**: every AI capability — conversational support, meal-photo analysis, speech transcription and facial emotion recognition — runs on **models installed locally on the user's own machine**. No user message, photo, voice recording, or journal entry is ever sent to a third-party or cloud AI provider (no OpenAI, no Claude, no Gemini). The application talks only to a local model server ([Ollama](https://ollama.com) by default) on `localhost`.
 
-> The desktop application (`desktop_app/`) is the primary, evaluated deliverable of this project. The React app remains the original prototype, kept up to date and deployed as a live demo so the design can be tried without installing anything.
+> The desktop application (`desktop_app/`) is the primary, evaluated deliverable of this project. The React app remains the original prototype, kept up to date so the design can be tried without installing anything.
+
+---
+
+## Getting Started
+
+### Prerequisites
+- **Python 3.11+** (developed and tested on 3.14) for the desktop app
+- **Node.js 18+** for the web prototype
+- **[Ollama](https://ollama.com)** installed, for local AI inference
+
+### Desktop application (recommended)
+
+```bash
+cd desktop_app
+python3 -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+
+ollama serve
+ollama pull llama3.2             # chat model — llava (vision) auto-downloads on first meal-photo use
+
+python main.py
+```
+
+Speech-to-text and facial-emotion models download automatically, once, the first time each feature is used. Full setup notes, project layout and per-tab documentation are in **[`desktop_app/README.md`](desktop_app/README.md)**.
+
+### Web prototype
+
+```bash
+npm install
+npm run dev
+```
 
 ---
 
 ## Live Demo
 
-The web version is deployed and fully usable in your browser — sign up, go through onboarding, and try every tab:
-
 ### 👉 [zxsomyaa.github.io/mind-fusion-ai](https://zxsomyaa.github.io/mind-fusion-ai/)
 
-This is a static build of `src/`. It is the **web prototype**, not the desktop app, so two desktop-only capabilities won't work here: the live camera mood check (no local face-emotion model in the browser) and real local Whisper speech-to-text (the web build uses the browser's own Web Speech API instead, when available). Everything else — Today, Chat, Nutrition, Journal, Insights, Exercises, Affirm, Support, dark mode — runs the same logic as the desktop app, against your browser's own storage.
+**This is a UI/UX demo only — no AI model runs behind it.** It's a static build of `src/` with nothing to install, so you can sign up, go through onboarding, and click through every tab (Today, Chat, Nutrition, Journal, Insights, Exercises, Affirm, Support, dark mode) to see the interface and interaction design. But Chat won't hold a real conversation and Nutrition won't actually analyse a photo, because there is no AI model connected on the hosted page — GitHub Pages only serves static files, and the local models this project relies on (Ollama, Whisper, YuNet/FER+) all need to run on an actual machine, not a web server.
 
-Chat and Nutrition need a local AI model to actually reply: they'll only respond if you have [Ollama](https://ollama.com) running on your own machine, since the page talks to `localhost` and never to a cloud server.
+The two desktop-only capabilities — the live camera mood check and real local Whisper speech-to-text — also aren't present here (the web build substitutes the browser's own Web Speech API for voice input, where supported).
 
-**To actually connect the live demo to your local Ollama**, start it with this page's origin allowed — Ollama blocks cross-origin browser requests by default:
+For the real, working application — chat replies, meal analysis, the lot — see [Getting Started](#getting-started) above.
+
+<details>
+<summary>Advanced: pointing the demo at your own local Ollama (not guaranteed to work)</summary>
+
+The page's JS calls `http://localhost:11434` from your own browser, so if you have Ollama running on the same machine, it may be reachable — but Ollama blocks cross-origin browser requests by default, and modern browsers add further restrictions on a public HTTPS page reaching into `localhost`. If you want to try it anyway:
 
 ```bash
 OLLAMA_ORIGINS=https://zxsomyaa.github.io ollama serve
 ```
 
-With that running, the page (loaded over HTTPS) can reach `http://localhost:11434` directly from your browser — nothing passes through GitHub or any third party.
-
-For the full, primary deliverable (native desktop app), see [Getting Started](#getting-started) below.
+Treat this as an experiment, not a supported way to use the app.
+</details>
 
 ---
 
@@ -59,35 +93,16 @@ More screens (nutrition, insights, exercises, dark mode, onboarding, journal) ar
 
 ## Features
 
-### Onboarding & accounts
-A welcome screen, sign-up / sign-in with inline validation, and a 5-step profile wizard (location, age group, health conditions, habits, up to 3 wellbeing goals). Returning users skip onboarding entirely — profile data is tied to the account, not the session.
+- **Onboarding & accounts** — sign-up/sign-in with a 5-step profile wizard (location, age, health conditions, habits, goals); returning users skip straight to their data.
+- **🏠 Today** — greeting, check-in streak, one-tap mood check-in, habit checklist, sleep log, a personalised suggestion, and a daily affirmation.
+- **💬 Chat** — a local-LLM companion with persisted history, a reply-language picker (English, Hindi, Hinglish and more), speech-to-text, a crisis-support banner, and a scripted offline fallback if the AI server is unreachable.
+- **📓 Journal** — writing prompts, live mood tagging, search and mood filtering.
+- **🍽️ Nutrition** — drop in a meal photo for a local vision model's estimate of calories, macros and balance, plus daily totals and a meal log.
+- **📊 Insights** — 7/30/90-day/all-time analytics: KPIs vs. the previous period, plain-language findings, mood mix/trend/calendar charts, habit consistency, and nutrition/exercise/journal summaries.
+- **🧘 Exercises** — seven guided breathing/grounding practices with session logging, plus manual logging for anything done outside the app.
+- **Also** — dark mode, one-click JSON data export, and a settings panel supporting Ollama, LM Studio, or any OpenAI-compatible local server.
 
-### 🏠 Today
-Personal greeting, check-in streak, one-tap mood check-in, a daily **habit checklist** with per-habit streaks, a **sleep log** (hours + quality), a mood-personalised suggestion, a daily affirmation, and quick-action shortcuts.
-
-### 💬 Chat
-A local-LLM wellbeing companion with:
-- Conversation history persisted and replayed between sessions (last 20 messages kept in context)
-- A **reply-language picker** — respond in English, Hindi, Hinglish (Hindi typed in Roman letters), Spanish, French, German and more, remembered per user
-- 🎤 **Speech-to-text** via a local Whisper model (desktop app) or the browser's own speech recognition (web app)
-- 📷 A **live camera window** for facial-expression-based mood detection (desktop app only — no browser equivalent)
-- A **crisis-support banner** that surfaces country-specific helplines when a message suggests self-harm risk
-- A **scripted, on-device fallback reply** if the local AI server is unreachable — the app never surfaces a raw connection error to the user
-
-### 📓 Journal
-Free-form journaling with writing prompts, live mood tagging, and full search + mood filtering over past entries.
-
-### 🍽️ Nutrition
-Drag-and-drop (or browse) a meal photo; a local vision-language model estimates calories, macronutrients and a balance score, returns food tags, an energy/mood note, and a practical tip. Ambiguous or malformed model output is rejected with a clear message rather than guessed at. Includes daily totals and a recent-meals list.
-
-### 📊 Insights
-Configurable time windows (7 / 30 / 90 days / all time) covering headline KPIs compared against the previous period, plain-language findings (e.g. *"On days you slept 7+ hours…"*), mood mix and trend charts, a 12-week mood calendar, best days of the week, sleep trends, habit consistency, calorie/macro breakdowns, and an exercise & journal summary — all custom-drawn with Qt's painter API and fully theme-aware.
-
-### 🧘 Exercises
-Seven guided practices (breathing, relaxation, body scan, gratitude, grounding) with session logging, plus manual logging for activities done outside the app.
-
-### Also
-Dark mode (remembered across launches) · one-click full data export to JSON · a local AI settings panel supporting Ollama, LM Studio, or any OpenAI-compatible local server.
+Desktop-only extras: a live camera window for facial-expression mood detection, and real local Whisper transcription (the web app substitutes the browser's own speech recognition).
 
 ---
 
@@ -158,38 +173,6 @@ mind-fusion-ai/
 
 ---
 
-## Getting Started
-
-### Prerequisites
-- **Python 3.11+** (developed and tested on 3.14) for the desktop app
-- **Node.js 18+** for the web prototype
-- **[Ollama](https://ollama.com)** installed, for local AI inference
-
-### Desktop application (recommended)
-
-```bash
-cd desktop_app
-python3 -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-
-ollama serve
-ollama pull llama3.2             # chat model — llava (vision) auto-downloads on first meal-photo use
-
-python main.py
-```
-
-Speech-to-text and facial-emotion models download automatically, once, the first time each feature is used. Full setup notes, project layout and per-tab documentation are in **[`desktop_app/README.md`](desktop_app/README.md)**.
-
-### Web prototype
-
-```bash
-npm install
-npm run dev
-```
-
----
-
 ## Testing & Evidence
 
 The desktop application ships **101 automated tests** (`pytest`/`unittest`) covering mood detection (English, Hindi, Hinglish), crisis-language detection, the photo loader, the live camera pipeline, the onboarding flow, the database layer, every analytics chart, and all main screens — using a temporary database and stand-ins for the AI server and camera, so the suite never touches real user data and needs no network connection.
@@ -222,4 +205,3 @@ No user data — messages, journal entries, mood history, meal photos or voice r
 ## Author
 
 **Somya Mehta** — final-year academic project.
-
