@@ -47,9 +47,14 @@ export function hexToRgb(hex) {
   return m.map(h => parseInt(h, 16)).join(', ');
 }
 
+// The desktop app uses one plain system sans-serif everywhere (see
+// desktop_app/styles.py) - no serif display face, no loaded web fonts. `serif`
+// is kept only so existing call sites don't need to change; it's now an alias
+// of `sans` so the web app matches that same, single typeface.
+const SYSTEM_SANS = "'Helvetica Neue', 'Segoe UI', Arial, sans-serif";
 export const FONT = {
-  serif: "'Playfair Display', Georgia, serif",
-  sans: "'DM Sans', system-ui, sans-serif",
+  serif: SYSTEM_SANS,
+  sans: SYSTEM_SANS,
 };
 
 // ─── Mood System ─────────────────────────────────────────────

@@ -220,7 +220,7 @@ export default function ChatTab({ userProfile, aiConfig, connected, addMoodEntry
           <>
             <div className="animate-in" style={{
               textAlign: 'center', padding: '48px 24px',
-              background: C.surface, borderRadius: 20, boxShadow: C.shadow, marginBottom: 16,
+              background: C.surface, borderRadius: 16, border: `1px solid ${C.border}`, marginBottom: 16,
             }}>
               <div style={{ fontSize: 42, marginBottom: 12 }}>🌿</div>
               <h2 style={{ fontFamily: FONT.serif, color: C.primary, fontSize: 22, marginBottom: 8 }}>
@@ -280,7 +280,7 @@ export default function ChatTab({ userProfile, aiConfig, connected, addMoodEntry
 
         {/* Input area */}
         <div style={{
-          background: C.surface, borderRadius: 18, boxShadow: C.shadow,
+          background: C.surface, borderRadius: 16,
           border: `1px solid ${C.border}`, overflow: 'hidden', position: 'sticky', bottom: 0,
         }}>
           {(interim || voiceErr) && (
@@ -369,10 +369,9 @@ function MessageBubble({ msg }) {
       <div style={{
         maxWidth: '72%',
         padding: isUser ? '11px 16px' : '13px 18px',
-        borderRadius: isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+        borderRadius: 14,
         background: isUser ? C.primary : C.surface,
         color: isUser ? '#FFF' : C.text,
-        boxShadow: isUser ? 'none' : C.shadow,
         fontSize: 14, lineHeight: 1.65,
         fontFamily: isUser ? FONT.sans : FONT.serif,
         border: isUser ? 'none' : `1px solid ${C.border}`,
@@ -400,7 +399,7 @@ function TypingIndicator() {
   return (
     <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
       <div style={{ width: 34, height: 34, borderRadius: '50%', background: C.sagePale, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>🌿</div>
-      <div style={{ padding: '13px 18px', borderRadius: '18px 18px 18px 4px', background: C.surface, boxShadow: C.shadow, border: `1px solid ${C.border}` }}>
+      <div style={{ padding: '13px 18px', borderRadius: 14, background: C.surface, border: `1px solid ${C.border}` }}>
         <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
           {[0, 1, 2].map(i => (
             <div key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: C.sageLight, animation: `pulse 1.4s ease ${i * 0.2}s infinite` }} />
@@ -413,7 +412,7 @@ function TypingIndicator() {
 
 function RecCard({ rec, expanded, onToggle }) {
   return (
-    <div style={{ background: C.surface, borderRadius: 16, boxShadow: C.shadow, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+    <div style={{ background: C.surface, borderRadius: 12, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
       <button onClick={onToggle} style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left' }}>
         <span style={{ fontSize: 22, flexShrink: 0 }}>{rec.emoji}</span>
         <p style={{ flex: 1, fontSize: 13, fontWeight: 600, color: C.text, margin: 0 }}>{rec.title}</p>

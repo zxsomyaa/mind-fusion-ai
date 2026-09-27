@@ -50,8 +50,8 @@ export default function AffirmTab() {
       {/* Main affirmation card */}
       <div className="animate-in" style={{
         background: `linear-gradient(145deg, ${C.primaryPale} 0%, ${C.sagePale} 100%)`,
-        borderRadius: 24, padding: '40px 32px', textAlign: 'center',
-        boxShadow: C.shadowLg, border: `1px solid ${C.border}`,
+        borderRadius: 16, padding: '40px 32px', textAlign: 'center',
+        border: `1px solid ${C.border}`,
         minHeight: 200, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', gap: 24,
       }}>
@@ -71,7 +71,7 @@ export default function AffirmTab() {
             width: 44, height: 44, borderRadius: '50%', border: 'none',
             background: isFav ? '#FCEEE9' : C.surface,
             color: isFav ? '#E07A5F' : C.textMuted, cursor: 'pointer', fontSize: 22,
-            boxShadow: C.shadow, transition: 'all 0.2s',
+            transition: 'all 0.2s',
             animation: liked ? 'pulse 0.4s ease' : 'none',
           }}>
             {isFav ? '♥' : '♡'}
@@ -96,7 +96,7 @@ export default function AffirmTab() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {favorites.map(fav => (
               <div key={fav.id} className="animate-in" style={{
-                background: C.surface, borderRadius: 16, boxShadow: C.shadow,
+                background: C.surface, borderRadius: 16,
                 border: `1px solid ${C.border}`, padding: '16px 20px',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
               }}>

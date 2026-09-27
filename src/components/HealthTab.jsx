@@ -49,7 +49,7 @@ export default function HealthTab({ userProfile }) {
 function ConditionCard({ emoji, title, tips, customMessage }) {
   return (
     <div className="animate-in" style={{
-      background: C.surface, borderRadius: 20, boxShadow: C.shadow,
+      background: C.surface, borderRadius: 16,
       border: `1px solid ${C.border}`, padding: '22px 24px',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
@@ -88,7 +88,7 @@ function EmptyState({ emoji, title, body }) {
   return (
     <div style={{
       textAlign: 'center', padding: '64px 24px',
-      background: C.surface, borderRadius: 20, boxShadow: C.shadow,
+      background: C.surface, borderRadius: 16, border: `1px solid ${C.border}`,
     }}>
       <div style={{ fontSize: 44, marginBottom: 14 }}>{emoji}</div>
       <h2 style={{ fontFamily: FONT.serif, color: C.primary, fontSize: 22, marginBottom: 10 }}>{title}</h2>

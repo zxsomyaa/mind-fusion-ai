@@ -56,7 +56,7 @@ export default function JournalTab({ addMoodEntry, onGoToChat }) {
       {/* Prompt card */}
       <div style={{
         background: `linear-gradient(135deg, ${C.primaryPale}, ${C.sagePale})`,
-        borderRadius: 20, padding: '22px 24px', border: `1px solid ${C.border}`,
+        borderRadius: 16, padding: '22px 24px', border: `1px solid ${C.border}`,
       }}>
         <p style={{ fontSize: 12, color: C.primary, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
           Today's prompt
@@ -75,7 +75,7 @@ export default function JournalTab({ addMoodEntry, onGoToChat }) {
 
       {/* Writing area */}
       <div style={{
-        background: C.surface, borderRadius: 20, boxShadow: C.shadow,
+        background: C.surface, borderRadius: 16,
         border: `1px solid ${C.border}`, overflow: 'hidden',
       }}>
         <textarea
@@ -137,7 +137,7 @@ export default function JournalTab({ addMoodEntry, onGoToChat }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {entries.map(entry => (
               <div key={entry.id} className="animate-in" style={{
-                background: C.surface, borderRadius: 16, boxShadow: C.shadow,
+                background: C.surface, borderRadius: 16,
                 border: `1px solid ${C.border}`, padding: '16px 20px',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>

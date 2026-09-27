@@ -50,7 +50,7 @@ export default function SupportTab({ userProfile }) {
       })}
 
       <div style={{
-        background: C.surface, borderRadius: 16, boxShadow: C.shadow,
+        background: C.surface, borderRadius: 16,
         border: `1px solid ${C.border}`, padding: '18px 20px',
         display: 'flex', gap: 14, alignItems: 'flex-start',
       }}>
@@ -78,10 +78,10 @@ function ResourceCard({ item, bg, border }) {
       style={{
         textDecoration: 'none', display: 'block',
         background: bg, borderRadius: 14, padding: '16px 18px',
-        border: `1px solid ${border}`, transition: 'box-shadow 0.2s',
+        border: `1px solid ${border}`, transition: 'border-color 0.2s',
       }}
-      onMouseEnter={e => e.currentTarget.style.boxShadow = C.shadow}
-      onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+      onMouseEnter={e => e.currentTarget.style.borderColor = C.primary}
+      onMouseLeave={e => e.currentTarget.style.borderColor = border}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
         <div style={{ flex: 1 }}>
